@@ -24,6 +24,9 @@ struct ExerciseListView: View {
                                     Text(exercise.name)
                                 }
                             }
+                            .onDelete { offsets in
+                                deleteExercise(at: offsets, in: group)
+                            }
                         }
                     }
                 }
@@ -73,6 +76,14 @@ struct ExerciseListView: View {
         newExerciseName = ""
         newExerciseGroup = .push
         showAddExercise = false
+    }
+
+    private func deleteExercise(at offsets: IndexSet, in group: ExerciseGroupType) {
+        let items = store.exercises.filter { $0.group == group }
+        offsets.forEach { index in
+            let exercise = items[index]
+            store.deleteExercise(exercise)
+        }
     }
 }
 
