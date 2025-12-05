@@ -85,6 +85,13 @@ class WorkoutStore: ObservableObject {
         }
     }
 
+    func deleteWorkout(_ workout: Workout) {
+        if let index = workouts.firstIndex(where: { $0.id == workout.id }) {
+            workouts.remove(at: index)
+            save()
+        }
+    }
+
     func historyForExercise(_ exercise: Exercise) -> [(date: Date, set: WorkoutSet)] {
         workouts.flatMap { workout in
             workout.sets

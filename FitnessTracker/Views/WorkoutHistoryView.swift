@@ -4,6 +4,9 @@ import SwiftUI
 struct WorkoutHistoryView: View {
     @EnvironmentObject var store: WorkoutStore
 
+    @State private var workoutToDelete: Workout?
+    @State private var showDeleteConfirmation = false
+
     var sortedWorkouts: [Workout] {
         store.workouts.sorted(by: { $0.date > $1.date })
     }
@@ -28,9 +31,25 @@ struct WorkoutHistoryView: View {
                             }
                         }
                     }
+                    .onDelete(perform: deleteWorkout)
                 }
             }
             .navigationTitle("Workout History")
+            .alert("Delete Workout", isPresented: $showDeleteConfirmation, presenting: workoutToDelete) { workout in
+                Button("Delete", role: .destructive) {
+                    store.deleteWorkout(workout)
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: { workout in
+                Text("Are you sure you want to delete this workout? This action cannot be undone.")
+            }
+        }
+    }
+
+    private func deleteWorkout(at offsets: IndexSet) {
+        if let index = offsets.first {
+            workoutToDelete = sortedWorkouts[index]
+            showDeleteConfirmation = true
         }
     }
 
