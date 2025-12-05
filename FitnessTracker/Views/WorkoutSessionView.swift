@@ -15,6 +15,26 @@ struct WorkoutSessionView: View {
         store.exercises.filter { $0.group == selectedGroup }
     }
 
+    struct ExerciseSetGroup: Identifiable {
+        let id = UUID()
+        let exercise: Exercise
+        var sets: [WorkoutSet]
+    }
+
+    var groupedSets: [ExerciseSetGroup] {
+        var groups: [ExerciseSetGroup] = []
+        for set in currentSets {
+            if let lastGroup = groups.last, lastGroup.exercise.id == set.exerciseId {
+                groups[groups.count - 1].sets.append(set)
+            } else {
+                if let exercise = store.exercises.first(where: { $0.id == set.exerciseId }) {
+                    groups.append(ExerciseSetGroup(exercise: exercise, sets: [set]))
+                }
+            }
+        }
+        return groups
+    }
+
     var body: some View {
         NavigationStack {
             VStack {
@@ -57,18 +77,24 @@ struct WorkoutSessionView: View {
                         }
                     }
 
-                    Section(header: Text("Sets in this workout"), footer: volumeFooter) {
-                        if currentSets.isEmpty {
+                    if currentSets.isEmpty {
+                        Section {
                             Text("No sets added yet.")
                                 .foregroundColor(.secondary)
                                 .italic()
-                        } else {
-                            ForEach(currentSets) { set in
-                                if let exercise = store.exercises.first(where: { $0.id == set.exerciseId }) {
+                        }
+                    } else {
+                        ForEach(groupedSets) { group in
+                            Section(header: Text(group.exercise.name)) {
+                                ForEach(group.sets) { set in
                                     HStack {
-                                        Text(exercise.name)
-                                            .font(.headline)
+                                        Text("Set \(group.sets.firstIndex(where: { $0.id == set.id })! + 1)")
+                                            .foregroundColor(.secondary)
+                                            .font(.caption)
+                                            .frame(width: 40, alignment: .leading)
+                                        
                                         Spacer()
+                                        
                                         HStack(spacing: 4) {
                                             Text("\(Int(set.weight))")
                                                 .font(.system(.body, design: .monospaced))
@@ -85,8 +111,14 @@ struct WorkoutSessionView: View {
                                         }
                                     }
                                 }
+                                .onDelete { offsets in
+                                    deleteSet(in: group, at: offsets)
+                                }
                             }
-                            .onDelete(perform: deleteSet)
+                        }
+                        
+                        Section(footer: volumeFooter) {
+                            EmptyView()
                         }
                     }
                 }
@@ -121,8 +153,11 @@ struct WorkoutSessionView: View {
         repsText = ""
     }
 
-    private func deleteSet(at offsets: IndexSet) {
-        currentSets.remove(atOffsets: offsets)
+    private func deleteSet(in group: ExerciseSetGroup, at offsets: IndexSet) {
+        let setsToDelete = offsets.map { group.sets[$0] }
+        currentSets.removeAll { set in
+            setsToDelete.contains(where: { $0.id == set.id })
+        }
     }
 
     private func saveWorkout() {
