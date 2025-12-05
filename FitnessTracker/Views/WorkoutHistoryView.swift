@@ -60,6 +60,9 @@ struct WorkoutDetailView: View {
     @EnvironmentObject var store: WorkoutStore
     let workout: Workout
     
+    @State private var showDatePicker = false
+    @State private var selectedDate: Date
+    
     struct ExerciseSetGroup: Identifiable {
         let id = UUID()
         let exercise: Exercise
@@ -80,6 +83,11 @@ struct WorkoutDetailView: View {
         return groups
     }
 
+    init(workout: Workout) {
+        self.workout = workout
+        _selectedDate = State(initialValue: workout.date)
+    }
+
     var title: String {
         workout.title(using: store.exercises)
     }
@@ -87,7 +95,22 @@ struct WorkoutDetailView: View {
     var body: some View {
         List {
             Section {
-                Text(workout.date, style: .date)
+                Button(action: {
+                    showDatePicker = true
+                }) {
+                    HStack {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text("Date")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                            Text(workout.date, style: .date)
+                                .foregroundColor(.primary)
+                        }
+                        Spacer()
+                        Image(systemName: "calendar")
+                            .foregroundColor(.blue)
+                    }
+                }
                 Text(workout.date, style: .time)
             }
 
@@ -122,6 +145,37 @@ struct WorkoutDetailView: View {
             }
         }
         .navigationTitle(title)
+        .sheet(isPresented: $showDatePicker) {
+            NavigationStack {
+                VStack {
+                    DatePicker(
+                        "Select Date",
+                        selection: $selectedDate,
+                        displayedComponents: [.date, .hourAndMinute]
+                    )
+                    .datePickerStyle(.graphical)
+                    .padding()
+                    
+                    Spacer()
+                }
+                .navigationTitle("Edit Date")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Cancel") {
+                            selectedDate = workout.date
+                            showDatePicker = false
+                        }
+                    }
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Done") {
+                            store.updateWorkoutDate(workout, newDate: selectedDate)
+                            showDatePicker = false
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
