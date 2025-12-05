@@ -19,7 +19,7 @@ struct ExerciseHistoryView: View {
     }
 
     var historyEntries: [(date: Date, set: WorkoutSet)] {
-        store.historyForExercise(exercise)
+        store.historyForExercise(exercise).sorted(by: { $0.date > $1.date })
     }
 
     var body: some View {
