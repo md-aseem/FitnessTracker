@@ -66,6 +66,7 @@ struct WorkoutSessionView: View {
                         }
                     }
                 }
+                .scrollDismissesKeyboard(.interactively)
 
                 Button(action: saveWorkout) {
                     Text("Save Workout")
