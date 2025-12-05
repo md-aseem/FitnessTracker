@@ -5,30 +5,30 @@ struct SetInputRow: View {
     @Binding var weightText: String
     @Binding var repsText: String
 
-    var onAdd: () -> Void
+
 
     var body: some View {
-        HStack {
+        HStack(spacing: 12) {
+            Spacer()
+
             TextField("Weight", text: $weightText)
                 .keyboardType(.decimalPad)
                 .textFieldStyle(.roundedBorder)
                 .frame(width: 90)
+                .multilineTextAlignment(.center)
 
             Text("kg")
+                .foregroundColor(.secondary)
 
             TextField("Reps", text: $repsText)
                 .keyboardType(.numberPad)
                 .textFieldStyle(.roundedBorder)
                 .frame(width: 80)
+                .multilineTextAlignment(.center)
 
             Spacer()
-
-            Button(action: onAdd) {
-                Image(systemName: "plus.circle.fill")
-                    .imageScale(.large)
-            }
-            .disabled(!canAdd)
         }
+        .padding(.vertical, 8)
     }
 
     private var canAdd: Bool {
@@ -41,8 +41,7 @@ struct SetInputRow: View {
 #Preview {
     SetInputRow(
         weightText: .constant("60"),
-        repsText: .constant("8"),
-        onAdd: { }
+        repsText: .constant("8")
     )
     .padding()
 }

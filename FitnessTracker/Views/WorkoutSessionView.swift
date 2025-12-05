@@ -37,9 +37,19 @@ struct WorkoutSessionView: View {
                     Section("Add Set") {
                         SetInputRow(
                             weightText: $weightText,
-                            repsText: $repsText,
-                            onAdd: addSet
+                            repsText: $repsText
                         )
+                        Button(action: addSet) {
+                            Text("Add Set")
+                                .font(.headline)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 12)
+                                .background(canAddSet ? Color.accentColor : Color.gray.opacity(0.3))
+                                .foregroundColor(.white)
+                                .cornerRadius(10)
+                        }
+                        .disabled(!canAddSet)
+                        .buttonStyle(.plain)
                         if let exercise = selectedExercise {
                             Text("Current: \(exercise.name)")
                                 .font(.footnote)
@@ -47,18 +57,32 @@ struct WorkoutSessionView: View {
                         }
                     }
 
-                    Section("Sets in this workout") {
+                    Section(header: Text("Sets in this workout"), footer: volumeFooter) {
                         if currentSets.isEmpty {
                             Text("No sets added yet.")
                                 .foregroundColor(.secondary)
+                                .italic()
                         } else {
                             ForEach(currentSets) { set in
                                 if let exercise = store.exercises.first(where: { $0.id == set.exerciseId }) {
                                     HStack {
                                         Text(exercise.name)
+                                            .font(.headline)
                                         Spacer()
-                                        Text("\(Int(set.weight)) kg x \(set.reps)")
-                                            .foregroundColor(.secondary)
+                                        HStack(spacing: 4) {
+                                            Text("\(Int(set.weight))")
+                                                .font(.system(.body, design: .monospaced))
+                                                .fontWeight(.semibold)
+                                            Text("kg")
+                                                .font(.caption)
+                                                .foregroundColor(.secondary)
+                                            Text("x")
+                                                .font(.caption)
+                                                .foregroundColor(.secondary)
+                                            Text("\(set.reps)")
+                                                .font(.system(.body, design: .monospaced))
+                                                .fontWeight(.semibold)
+                                        }
                                     }
                                 }
                             }
@@ -68,18 +92,17 @@ struct WorkoutSessionView: View {
                 }
                 .scrollDismissesKeyboard(.interactively)
 
-                Button(action: saveWorkout) {
-                    Text("Save Workout")
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(currentSets.isEmpty ? Color.gray.opacity(0.3) : Color.accentColor)
-                        .foregroundColor(.white)
-                        .cornerRadius(12)
-                        .padding(.horizontal)
-                }
-                .disabled(currentSets.isEmpty)
+                // Save button moved to toolbar
             }
             .navigationTitle("New Workout")
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Save") {
+                        saveWorkout()
+                    }
+                    .disabled(currentSets.isEmpty)
+                }
+            }
             .alert("Workout saved!", isPresented: $showSavedAlert) {
                 Button("OK", role: .cancel) { }
             }
@@ -107,6 +130,23 @@ struct WorkoutSessionView: View {
         store.addWorkout(sets: currentSets)
         currentSets.removeAll()
         showSavedAlert = true
+    }
+
+
+    private var volumeFooter: some View {
+        Group {
+            if !currentSets.isEmpty {
+                let totalVolume = currentSets.reduce(0) { $0 + ($1.weight * Double($1.reps)) }
+                Text("Total Volume: \(Int(totalVolume)) kg")
+            }
+        }
+
+    }
+
+    private var canAddSet: Bool {
+        guard let weight = Double(weightText), weight > 0 else { return false }
+        guard let reps = Int(repsText), reps > 0 else { return false }
+        return selectedExercise != nil
     }
 }
 
