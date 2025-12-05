@@ -18,8 +18,40 @@ struct ExerciseHistoryView: View {
         }
     }
 
-    var historyEntries: [(date: Date, set: WorkoutSet)] {
-        store.historyForExercise(exercise).sorted(by: { $0.date > $1.date })
+    struct SetWrapper: Identifiable {
+        let id = UUID()
+        let set: WorkoutSet
+        let index: Int
+        let isMaxWeight: Bool
+    }
+
+    struct GroupedSets: Identifiable {
+        let id = UUID()
+        let date: Date
+        let sets: [SetWrapper]
+    }
+
+    var groupedHistory: [GroupedSets] {
+        let entries = store.historyForExercise(exercise)
+        let grouped = Dictionary(grouping: entries) { entry -> Date in
+            Calendar.current.startOfDay(for: entry.date)
+        }
+        
+        return grouped.map { (date, entries) in
+            let sortedEntries = entries.sorted { $0.date < $1.date } // Sort by time within the day
+            let maxWeight = sortedEntries.map { $0.set.weight }.max() ?? 0
+            
+            let setWrappers = sortedEntries.enumerated().map { index, entry in
+                SetWrapper(
+                    set: entry.set,
+                    index: index + 1,
+                    isMaxWeight: entry.set.weight == maxWeight
+                )
+            }
+            
+            return GroupedSets(date: date, sets: setWrappers)
+        }
+        .sorted { $0.date > $1.date }
     }
 
     var body: some View {
@@ -63,25 +95,47 @@ struct ExerciseHistoryView: View {
                     .font(.headline)
                     .padding(.horizontal)
 
-                if historyEntries.isEmpty {
+                if groupedHistory.isEmpty {
                     Text("No sets logged yet.")
                         .foregroundColor(.secondary)
                         .padding(.horizontal)
                 } else {
-                    ForEach(Array(historyEntries.enumerated()), id: \.offset) { _, entry in
-                        HStack {
-                            VStack(alignment: .leading) {
-                                Text(entry.date, style: .date)
-                                Text(entry.date, style: .time)
-                                    .font(.caption)
-                                    .foregroundColor(.secondary)
+                    ForEach(groupedHistory) { group in
+                        Section(header: Text(group.date, style: .date).font(.subheadline).bold().foregroundColor(.secondary)) {
+                            ForEach(group.sets) { setWrapper in
+                                HStack {
+                                    Text("Set \(setWrapper.index)")
+                                        .foregroundColor(.secondary)
+                                        .font(.caption)
+                                        .frame(width: 40, alignment: .leading)
+
+                                    Spacer()
+
+                                    HStack(spacing: 4) {
+                                        Text("\(Int(setWrapper.set.weight))")
+                                            .font(.system(.body, design: .monospaced))
+                                            .fontWeight(setWrapper.isMaxWeight ? .black : .semibold)
+                                            .foregroundColor(setWrapper.isMaxWeight ? .accentColor : .primary)
+                                        Text("lb")
+                                            .font(.caption)
+                                            .foregroundColor(.secondary)
+                                        Text("x")
+                                            .font(.caption)
+                                            .foregroundColor(.secondary)
+                                        Text("\(setWrapper.set.reps)")
+                                            .font(.system(.body, design: .monospaced))
+                                            .fontWeight(.semibold)
+                                    }
+                                    
+
+                                }
+                                .padding(.horizontal)
+                                .padding(.vertical, 4)
+                                .background(setWrapper.isMaxWeight ? Color.accentColor.opacity(0.1) : Color.clear)
+                                .cornerRadius(8)
                             }
-                            Spacer()
-                            Text("\(Int(entry.set.weight)) lb x \(entry.set.reps)")
-                                .bold()
                         }
                         .padding(.horizontal)
-                        .padding(.vertical, 4)
                     }
                 }
             }
