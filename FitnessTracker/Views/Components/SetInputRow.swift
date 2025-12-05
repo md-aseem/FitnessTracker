@@ -17,7 +17,7 @@ struct SetInputRow: View {
                 .frame(width: 90)
                 .multilineTextAlignment(.center)
 
-            Text("kg")
+            Text("lb")
                 .foregroundColor(.secondary)
 
             TextField("Reps", text: $repsText)

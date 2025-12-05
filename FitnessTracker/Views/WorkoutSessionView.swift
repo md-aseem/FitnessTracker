@@ -103,7 +103,7 @@ struct WorkoutSessionView: View {
                                             Text("\(Int(set.weight))")
                                                 .font(.system(.body, design: .monospaced))
                                                 .fontWeight(.semibold)
-                                            Text("kg")
+                                            Text("lb")
                                                 .font(.caption)
                                                 .foregroundColor(.secondary)
                                             Text("x")
@@ -176,7 +176,7 @@ struct WorkoutSessionView: View {
         Group {
             if !currentSets.isEmpty {
                 let totalVolume = currentSets.reduce(0) { $0 + ($1.weight * Double($1.reps)) }
-                Text("Total Volume: \(Int(totalVolume)) kg")
+                Text("Total Volume: \(Int(totalVolume)) lb")
             }
         }
 

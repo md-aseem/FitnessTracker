@@ -79,7 +79,7 @@ struct WorkoutDetailView: View {
                                     .foregroundColor(.secondary)
                             }
                             Spacer()
-                            Text("\(Int(set.weight)) kg")
+                            Text("\(Int(set.weight)) lb")
                                 .bold()
                         }
                     }

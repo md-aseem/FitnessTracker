@@ -77,7 +77,7 @@ struct ExerciseHistoryView: View {
                                     .foregroundColor(.secondary)
                             }
                             Spacer()
-                            Text("\(Int(entry.set.weight)) kg x \(entry.set.reps)")
+                            Text("\(Int(entry.set.weight)) lb x \(entry.set.reps)")
                                 .bold()
                         }
                         .padding(.horizontal)
