@@ -39,12 +39,14 @@ struct WorkoutSessionView: View {
         NavigationStack {
             VStack {
                 Form {
-                    Section("Exercise") {
+                    Section {
                         Picker("Group", selection: $selectedGroup) {
                             ForEach(ExerciseGroupType.allCases) { group in
                                 Text(group.displayName).tag(group)
                             }
                         }
+                        .pickerStyle(.segmented)
+                        .padding(.vertical, 4)
 
                         Picker("Exercise", selection: $selectedExercise) {
                             Text("Select exercise").tag(Optional<Exercise>.none)
@@ -52,6 +54,8 @@ struct WorkoutSessionView: View {
                                 Text(exercise.name).tag(Optional(exercise))
                             }
                         }
+                    } header: {
+                        Text("Selection")
                     }
 
                     Section("Add Set") {
@@ -126,7 +130,7 @@ struct WorkoutSessionView: View {
 
                 // Save button moved to toolbar
             }
-            .navigationTitle("New Workout")
+            .navigationTitle("\(selectedGroup.displayName) Day")
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Save") {
