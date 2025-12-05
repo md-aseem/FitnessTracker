@@ -6,6 +6,8 @@ struct ExerciseListView: View {
     @State private var showAddExercise = false
     @State private var newExerciseName = ""
     @State private var newExerciseGroup: ExerciseGroupType = .push
+    @State private var exerciseToDelete: Exercise?
+    @State private var showDeleteConfirmation = false
 
     var body: some View {
         NavigationStack {
@@ -66,6 +68,14 @@ struct ExerciseListView: View {
                     }
                 }
             }
+            .alert("Delete Exercise", isPresented: $showDeleteConfirmation, presenting: exerciseToDelete) { exercise in
+                Button("Delete", role: .destructive) {
+                    store.deleteExercise(exercise)
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: { exercise in
+                Text("Are you sure you want to delete '\(exercise.name)'? This action cannot be undone.")
+            }
         }
     }
 
@@ -80,9 +90,9 @@ struct ExerciseListView: View {
 
     private func deleteExercise(at offsets: IndexSet, in group: ExerciseGroupType) {
         let items = store.exercises.filter { $0.group == group }
-        offsets.forEach { index in
-            let exercise = items[index]
-            store.deleteExercise(exercise)
+        if let index = offsets.first {
+            exerciseToDelete = items[index]
+            showDeleteConfirmation = true
         }
     }
 }
