@@ -55,6 +55,23 @@ struct Workout: Identifiable, Codable {
         self.date = date
         self.sets = sets
     }
+    
+    func title(using exercises: [Exercise]) -> String {
+        let exerciseIds = sets.map { $0.exerciseId }
+        var groupCounts: [ExerciseGroupType: Int] = [:]
+        
+        for id in exerciseIds {
+            if let exercise = exercises.first(where: { $0.id == id }) {
+                groupCounts[exercise.group, default: 0] += 1
+            }
+        }
+        
+        if let maxGroup = groupCounts.max(by: { $0.value < $1.value })?.key {
+            return "\(maxGroup.displayName) Day"
+        }
+        
+        return "Workout"
+    }
 }
 
 /// Wrapper for saving/loading everything in one file

@@ -20,7 +20,7 @@ struct WorkoutHistoryView: View {
                             WorkoutDetailView(workout: workout)
                         } label: {
                             VStack(alignment: .leading, spacing: 4) {
-                                Text(workoutTitle(for: workout))
+                                Text(workout.title(using: store.exercises))
                                     .font(.headline)
                                 Text(workout.date, style: .date)
                                     .font(.subheadline)
@@ -34,26 +34,7 @@ struct WorkoutHistoryView: View {
         }
     }
 
-    func workoutTitle(for workout: Workout) -> String {
-        // Gather all exercise IDs from the sets
-        let exerciseIds = workout.sets.map { $0.exerciseId }
-        
-        // Count occurrences of each group
-        var groupCounts: [ExerciseGroupType: Int] = [:]
-        
-        for id in exerciseIds {
-            if let exercise = store.exercises.first(where: { $0.id == id }) {
-                groupCounts[exercise.group, default: 0] += 1
-            }
-        }
-        
-        // Find the group with the highest count
-        if let maxGroup = groupCounts.max(by: { $0.value < $1.value })?.key {
-            return "\(maxGroup.displayName) Day"
-        }
-        
-        return "Workout"
-    }
+
 }
 
 struct WorkoutDetailView: View {
@@ -78,6 +59,10 @@ struct WorkoutDetailView: View {
             }
         }
         return groups
+    }
+
+    var title: String {
+        workout.title(using: store.exercises)
     }
 
     var body: some View {
@@ -117,7 +102,7 @@ struct WorkoutDetailView: View {
                 }
             }
         }
-        .navigationTitle("Workout Detail")
+        .navigationTitle(title)
     }
 }
 
