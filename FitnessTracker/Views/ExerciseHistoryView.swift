@@ -5,6 +5,8 @@ import Charts
 struct ExerciseHistoryView: View {
     @EnvironmentObject var store: WorkoutStore
     let exercise: Exercise
+    
+    @State private var minReps: Int = 6
 
     struct DataPoint: Identifiable {
         let id = UUID()
@@ -13,7 +15,7 @@ struct ExerciseHistoryView: View {
     }
 
     var dataPoints: [DataPoint] {
-        store.maxWeightPerDay(for: exercise).map { (date, weight) in
+        store.maxWeightPerDay(for: exercise, minReps: minReps).map { (date, weight) in
             DataPoint(date: date, weight: weight)
         }
     }
@@ -53,13 +55,16 @@ struct ExerciseHistoryView: View {
         
         return grouped.map { (date, entries) in
             let sortedEntries = entries.sorted { $0.date < $1.date } // Sort by time within the day
-            let maxWeight = sortedEntries.map { $0.set.weight }.max() ?? 0
+            
+            // Find max weight among sets meeting the minimum reps criteria
+            let validSets = sortedEntries.filter { $0.set.reps >= minReps }
+            let maxWeight = validSets.map { $0.set.weight }.max() ?? 0
             
             let setWrappers = sortedEntries.enumerated().map { index, entry in
                 SetWrapper(
                     set: entry.set,
                     index: index + 1,
-                    isMaxWeight: entry.set.weight == maxWeight
+                    isMaxWeight: entry.set.reps >= minReps && entry.set.weight == maxWeight
                 )
             }
             
@@ -77,6 +82,17 @@ struct ExerciseHistoryView: View {
                         .foregroundColor(.secondary)
                         .padding()
                 } else {
+                    HStack {
+                        Text("Min. Reps:")
+                            .font(.subheadline)
+                        Stepper(value: $minReps, in: 1...20) {
+                            Text("\(minReps)")
+                                .font(.system(.body, design: .monospaced))
+                                .fontWeight(.semibold)
+                        }
+                    }
+                    .padding(.horizontal)
+                    
                     Text("Max Weight Over Time")
                         .font(.headline)
                         .padding(.horizontal)

@@ -108,15 +108,19 @@ class WorkoutStore: ObservableObject {
         .sorted(by: { $0.date < $1.date })
     }
 
-    func maxWeightPerDay(for exercise: Exercise) -> [(date: Date, weight: Double)] {
+    func maxWeightPerDay(for exercise: Exercise, minReps: Int = 0) -> [(date: Date, weight: Double)] {
         let groupedByDay = Dictionary(grouping: historyForExercise(exercise)) { (entry) -> Date in
             let calendar = Calendar.current
             let components = calendar.dateComponents([.year, .month, .day], from: entry.date)
             return calendar.date(from: components) ?? entry.date
         }
 
-        return groupedByDay.map { (day, entries) in
-            let maxWeight = entries.map { $0.set.weight }.max() ?? 0
+        return groupedByDay.compactMap { (day, entries) in
+            // Filter by minimum reps
+            let filteredEntries = entries.filter { $0.set.reps >= minReps }
+            guard !filteredEntries.isEmpty else { return nil }
+            
+            let maxWeight = filteredEntries.map { $0.set.weight }.max() ?? 0
             return (date: day, weight: maxWeight)
         }
         .sorted(by: { $0.date < $1.date })
