@@ -76,27 +76,27 @@ struct ExerciseHistoryView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
+                
+                Text("Max Weight Over Time")
+                    .font(.headline)
+                    .padding(.horizontal)
+                
+                HStack {
+                    Text("Min. Reps:")
+                        .font(.subheadline)
+                    Stepper(value: $minReps, in: 1...20) {
+                        Text("\(minReps)")
+                            .font(.system(.body, design: .monospaced))
+                            .fontWeight(.semibold)
+                    }
+                }
+                .padding(.horizontal)
 
                 if dataPoints.isEmpty {
                     Text("No data yet for this exercise.")
                         .foregroundColor(.secondary)
                         .padding()
                 } else {
-                    Text("Max Weight Over Time")
-                        .font(.headline)
-                        .padding(.horizontal)
-                    
-                    HStack {
-                        Text("Min. Reps:")
-                            .font(.subheadline)
-                        Stepper(value: $minReps, in: 1...20) {
-                            Text("\(minReps)")
-                                .font(.system(.body, design: .monospaced))
-                                .fontWeight(.semibold)
-                        }
-                    }
-                    .padding(.horizontal)
-
                     Chart(dataPoints) { point in
                         LineMark(
                             x: .value("Date", point.date),
