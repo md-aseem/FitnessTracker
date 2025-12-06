@@ -62,6 +62,8 @@ struct WorkoutDetailView: View {
     
     @State private var showDatePicker = false
     @State private var selectedDate: Date
+    @State private var isEditing = false
+    @State private var editableSets: [WorkoutSet] = []
     
     struct ExerciseSetGroup: Identifiable {
         let id = UUID()
@@ -69,9 +71,9 @@ struct WorkoutDetailView: View {
         var sets: [WorkoutSet]
     }
 
-    var groupedSets: [ExerciseSetGroup] {
+    func groupedSets(from sets: [WorkoutSet]) -> [ExerciseSetGroup] {
         var groups: [ExerciseSetGroup] = []
-        for set in workout.sets {
+        for set in sets {
             if let lastGroup = groups.last, lastGroup.exercise.id == set.exerciseId {
                 groups[groups.count - 1].sets.append(set)
             } else {
@@ -86,6 +88,7 @@ struct WorkoutDetailView: View {
     init(workout: Workout) {
         self.workout = workout
         _selectedDate = State(initialValue: workout.date)
+        _editableSets = State(initialValue: workout.sets)
     }
 
     var title: String {
@@ -114,30 +117,42 @@ struct WorkoutDetailView: View {
                 Text(workout.date, style: .time)
             }
 
-            ForEach(groupedSets) { group in
+            ForEach(groupedSets(from: isEditing ? editableSets : workout.sets)) { group in
                 Section(header: Text(group.exercise.name)) {
                     ForEach(group.sets) { set in
-                        HStack {
-                            Text("Set \(group.sets.firstIndex(where: { $0.id == set.id })! + 1)")
-                                .foregroundColor(.secondary)
-                                .font(.caption)
-                                .frame(width: 40, alignment: .leading)
-                            
-                            Spacer()
-                            
-                            HStack(spacing: 4) {
-                                Text("\(Int(set.weight))")
-                                    .font(.system(.body, design: .monospaced))
-                                    .fontWeight(.semibold)
-                                Text("lb")
-                                    .font(.caption)
+                        if isEditing {
+                            EditableSetRow(
+                                set: set,
+                                setNumber: group.sets.firstIndex(where: { $0.id == set.id })! + 1,
+                                onUpdate: { updatedSet in
+                                    if let index = editableSets.firstIndex(where: { $0.id == updatedSet.id }) {
+                                        editableSets[index] = updatedSet
+                                    }
+                                }
+                            )
+                        } else {
+                            HStack {
+                                Text("Set \(group.sets.firstIndex(where: { $0.id == set.id })! + 1)")
                                     .foregroundColor(.secondary)
-                                Text("x")
                                     .font(.caption)
-                                    .foregroundColor(.secondary)
-                                Text("\(set.reps)")
-                                    .font(.system(.body, design: .monospaced))
-                                    .fontWeight(.semibold)
+                                    .frame(width: 40, alignment: .leading)
+                                
+                                Spacer()
+                                
+                                HStack(spacing: 4) {
+                                    Text("\(Int(set.weight))")
+                                        .font(.system(.body, design: .monospaced))
+                                        .fontWeight(.semibold)
+                                    Text("lb")
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                    Text("x")
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                    Text("\(set.reps)")
+                                        .font(.system(.body, design: .monospaced))
+                                        .fontWeight(.semibold)
+                                }
                             }
                         }
                     }
@@ -145,6 +160,20 @@ struct WorkoutDetailView: View {
             }
         }
         .navigationTitle(title)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button(isEditing ? "Done" : "Edit") {
+                    if isEditing {
+                        // Save changes
+                        store.updateWorkoutSets(workout, newSets: editableSets)
+                    } else {
+                        // Enter edit mode
+                        editableSets = workout.sets
+                    }
+                    isEditing.toggle()
+                }
+            }
+        }
         .sheet(isPresented: $showDatePicker) {
             NavigationStack {
                 VStack {
@@ -176,6 +205,74 @@ struct WorkoutDetailView: View {
                 }
             }
         }
+    }
+}
+
+struct EditableSetRow: View {
+    let set: WorkoutSet
+    let setNumber: Int
+    let onUpdate: (WorkoutSet) -> Void
+    
+    @State private var weightText: String
+    @State private var repsText: String
+    
+    init(set: WorkoutSet, setNumber: Int, onUpdate: @escaping (WorkoutSet) -> Void) {
+        self.set = set
+        self.setNumber = setNumber
+        self.onUpdate = onUpdate
+        _weightText = State(initialValue: "\(Int(set.weight))")
+        _repsText = State(initialValue: "\(set.reps)")
+    }
+    
+    var body: some View {
+        HStack {
+            Text("Set \(setNumber)")
+                .foregroundColor(.secondary)
+                .font(.caption)
+                .frame(width: 40, alignment: .leading)
+            
+            Spacer()
+            
+            HStack(spacing: 4) {
+                TextField("Weight", text: $weightText)
+                    .keyboardType(.numberPad)
+                    .font(.system(.body, design: .monospaced))
+                    .fontWeight(.semibold)
+                    .frame(width: 50)
+                    .multilineTextAlignment(.trailing)
+                    .textFieldStyle(.roundedBorder)
+                    .onChange(of: weightText) { _, newValue in
+                        updateSet()
+                    }
+                
+                Text("lb")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                Text("x")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                
+                TextField("Reps", text: $repsText)
+                    .keyboardType(.numberPad)
+                    .font(.system(.body, design: .monospaced))
+                    .fontWeight(.semibold)
+                    .frame(width: 40)
+                    .multilineTextAlignment(.trailing)
+                    .textFieldStyle(.roundedBorder)
+                    .onChange(of: repsText) { _, newValue in
+                        updateSet()
+                    }
+            }
+        }
+    }
+    
+    private func updateSet() {
+        let weight = Double(weightText) ?? set.weight
+        let reps = Int(repsText) ?? set.reps
+        var updatedSet = set
+        updatedSet.weight = weight
+        updatedSet.reps = reps
+        onUpdate(updatedSet)
     }
 }
 

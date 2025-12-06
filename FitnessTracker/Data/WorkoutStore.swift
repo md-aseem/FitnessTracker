@@ -99,6 +99,13 @@ class WorkoutStore: ObservableObject {
         }
     }
 
+    func updateWorkoutSets(_ workout: Workout, newSets: [WorkoutSet]) {
+        if let index = workouts.firstIndex(where: { $0.id == workout.id }) {
+            workouts[index].sets = newSets
+            save()
+        }
+    }
+
     func historyForExercise(_ exercise: Exercise) -> [(date: Date, set: WorkoutSet)] {
         workouts.flatMap { workout in
             workout.sets
