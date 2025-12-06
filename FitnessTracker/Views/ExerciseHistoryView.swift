@@ -82,6 +82,10 @@ struct ExerciseHistoryView: View {
                         .foregroundColor(.secondary)
                         .padding()
                 } else {
+                    Text("Max Weight Over Time")
+                        .font(.headline)
+                        .padding(.horizontal)
+                    
                     HStack {
                         Text("Min. Reps:")
                             .font(.subheadline)
@@ -92,10 +96,6 @@ struct ExerciseHistoryView: View {
                         }
                     }
                     .padding(.horizontal)
-                    
-                    Text("Max Weight Over Time")
-                        .font(.headline)
-                        .padding(.horizontal)
 
                     Chart(dataPoints) { point in
                         LineMark(
