@@ -18,6 +18,11 @@ struct ContentView: View {
                 .tabItem {
                     Label("Exercises", systemImage: "list.bullet")
                 }
+
+            SettingsView()
+                .tabItem {
+                    Label("Settings", systemImage: "gearshape")
+                }
         }
     }
 }

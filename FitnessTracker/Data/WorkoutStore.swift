@@ -162,6 +162,55 @@ class WorkoutStore: ObservableObject {
         return "Mixed Day"
     }
 
+    // MARK: - Export
+
+    /// Exports all workout data to a CSV string
+    func exportWorkoutsToCSV() -> String {
+        var csv = "Date,Exercise,Group,Set,Weight (lbs),Reps\n"
+        
+        let dateFormatter = DateFormatter()
+        dateFormatter.dateFormat = "yyyy-MM-dd"
+        
+        // Sort workouts by date
+        let sortedWorkouts = workouts.sorted { $0.date < $1.date }
+        
+        for workout in sortedWorkouts {
+            let dateString = dateFormatter.string(from: workout.date)
+            
+            // Group sets by exercise to number them
+            var exerciseSetCounts: [UUID: Int] = [:]
+            
+            for set in workout.sets {
+                let exerciseName = exercises.first(where: { $0.id == set.exerciseId })?.name ?? "Unknown"
+                let exerciseGroup = exercises.first(where: { $0.id == set.exerciseId })?.group.displayName ?? "Unknown"
+                
+                exerciseSetCounts[set.exerciseId, default: 0] += 1
+                let setNumber = exerciseSetCounts[set.exerciseId] ?? 1
+                
+                // Escape any commas in exercise name
+                let safeName = exerciseName.replacingOccurrences(of: ",", with: ";")
+                
+                csv += "\(dateString),\(safeName),\(exerciseGroup),\(setNumber),\(set.weight),\(set.reps)\n"
+            }
+        }
+        
+        return csv
+    }
+    
+    /// Exports the full app data (exercises + workouts) as JSON Data
+    func exportFullDataToJSON() -> Data? {
+        do {
+            let data = AppData(exercises: exercises, workouts: workouts)
+            let encoder = JSONEncoder()
+            encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+            encoder.dateEncodingStrategy = .iso8601
+            return try encoder.encode(data)
+        } catch {
+            print("Error exporting to JSON: \(error)")
+            return nil
+        }
+    }
+
     // MARK: - Persistence
 
     private func save() {
