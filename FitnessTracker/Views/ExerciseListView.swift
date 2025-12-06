@@ -13,7 +13,7 @@ struct ExerciseListView: View {
         NavigationStack {
             List {
                 ForEach(ExerciseGroupType.allCases) { group in
-                    Section(group.displayName) {
+                    Section {
                         let items = store.exercises.filter { $0.group == group }
                         if items.isEmpty {
                             Text("No exercises in this group.")
@@ -30,6 +30,10 @@ struct ExerciseListView: View {
                                 deleteExercise(at: offsets, in: group)
                             }
                         }
+                    } header: {
+                        Label(group.displayName, systemImage: group.iconName)
+                            .foregroundColor(.primary)
+                            .font(.headline)
                     }
                 }
             }

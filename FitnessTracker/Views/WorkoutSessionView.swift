@@ -64,13 +64,17 @@ struct WorkoutSessionView: View {
                             repsText: $repsText
                         )
                         Button(action: addSet) {
-                            Text("Add Set")
-                                .font(.headline)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 12)
-                                .background(canAddSet ? Color.accentColor : Color.gray.opacity(0.3))
-                                .foregroundColor(.white)
-                                .cornerRadius(10)
+                            HStack(spacing: 8) {
+                                Image(systemName: "plus.circle.fill")
+                                    .font(.headline)
+                                Text("Add Set")
+                                    .font(.headline)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 12)
+                            .background(canAddSet ? Color.accentColor : Color.gray.opacity(0.3))
+                            .foregroundColor(.white)
+                            .cornerRadius(10)
                         }
                         .disabled(!canAddSet)
                         .buttonStyle(.plain)

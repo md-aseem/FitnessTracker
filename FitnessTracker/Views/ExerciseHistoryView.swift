@@ -77,11 +77,17 @@ struct ExerciseHistoryView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 
-                Text("Max Weight Over Time")
-                    .font(.headline)
-                    .padding(.horizontal)
+                HStack(spacing: 6) {
+                    Image(systemName: "chart.line.uptrend.xyaxis")
+                        .foregroundColor(.accentColor)
+                    Text("Max Weight Over Time")
+                        .font(.headline)
+                }
+                .padding(.horizontal)
                 
                 HStack {
+                    Image(systemName: "line.3.horizontal.decrease.circle.fill")
+                        .foregroundColor(.orange)
                     Text("Min. Reps:")
                         .font(.subheadline)
                     Stepper(value: $minReps, in: 1...20) {
@@ -134,9 +140,13 @@ struct ExerciseHistoryView: View {
                 Divider()
                     .padding(.horizontal)
 
-                Text("All Sets")
-                    .font(.headline)
-                    .padding(.horizontal)
+                HStack(spacing: 6) {
+                    Image(systemName: "list.bullet.rectangle")
+                        .foregroundColor(.accentColor)
+                    Text("All Sets")
+                        .font(.headline)
+                }
+                .padding(.horizontal)
 
                 if groupedHistory.isEmpty {
                     Text("No sets logged yet.")

@@ -22,12 +22,23 @@ struct WorkoutHistoryView: View {
                         NavigationLink {
                             WorkoutDetailView(workout: workout)
                         } label: {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(workout.title(using: store.exercises))
-                                    .font(.headline)
-                                Text(workout.date, style: .date)
-                                    .font(.subheadline)
-                                    .foregroundColor(.secondary)
+                            HStack(spacing: 12) {
+                                Image(systemName: workout.iconName(using: store.exercises))
+                                    .foregroundColor(.accentColor)
+                                    .font(.title2)
+                                    .frame(width: 32)
+                                VStack(alignment: .leading, spacing: 4) {
+                                    Text(workout.title(using: store.exercises))
+                                        .font(.headline)
+                                    HStack(spacing: 4) {
+                                        Image(systemName: "calendar")
+                                            .font(.caption)
+                                            .foregroundColor(.secondary)
+                                        Text(workout.date, style: .date)
+                                            .font(.subheadline)
+                                            .foregroundColor(.secondary)
+                                    }
+                                }
                             }
                         }
                     }
@@ -114,7 +125,11 @@ struct WorkoutDetailView: View {
                             .foregroundColor(.blue)
                     }
                 }
-                Text(workout.date, style: .time)
+                HStack {
+                    Image(systemName: "clock")
+                        .foregroundColor(.secondary)
+                    Text(workout.date, style: .time)
+                }
             }
 
             ForEach(groupedSets(from: isEditing ? editableSets : workout.sets)) { group in
