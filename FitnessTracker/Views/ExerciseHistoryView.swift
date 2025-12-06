@@ -17,6 +17,20 @@ struct ExerciseHistoryView: View {
             DataPoint(date: date, weight: weight)
         }
     }
+    
+    var minWeight: Double {
+        let weights = dataPoints.map { $0.weight }
+        guard let min = weights.min() else { return 0 }
+        // Add 10% padding below minimum
+        return max(0, min - (min * 0.1))
+    }
+    
+    var maxWeight: Double {
+        let weights = dataPoints.map { $0.weight }
+        guard let max = weights.max() else { return 100 }
+        // Add 10% padding above maximum
+        return max + (max * 0.1)
+    }
 
     struct SetWrapper: Identifiable {
         let id = UUID()
@@ -79,6 +93,19 @@ struct ExerciseHistoryView: View {
                     }
                     .frame(height: 240)
                     .padding(.horizontal)
+                    .chartYScale(domain: minWeight...maxWeight)
+                    .chartYAxis {
+                        AxisMarks(position: .leading) { value in
+                            AxisGridLine()
+                            AxisTick()
+                            AxisValueLabel {
+                                if let weight = value.as(Double.self) {
+                                    Text("\(Int(weight)) lb")
+                                        .font(.caption)
+                                }
+                            }
+                        }
+                    }
                     .chartXAxis {
                         AxisMarks(values: .automatic) { _ in
                             AxisGridLine()
