@@ -19,6 +19,11 @@ struct ContentView: View {
                     Label("Exercises", systemImage: "list.bullet")
                 }
 
+            BiometricsView()
+                .tabItem {
+                    Label("Biometrics", systemImage: "chart.bar.doc.horizontal")
+                }
+
             SettingsView()
                 .tabItem {
                     Label("Settings", systemImage: "gearshape")

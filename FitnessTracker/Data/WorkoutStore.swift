@@ -8,6 +8,8 @@ import Combine
 class WorkoutStore: ObservableObject {
     @Published var exercises: [Exercise] = []
     @Published var workouts: [Workout] = []
+    @Published var biometricMetrics: [BiometricMetric] = []
+    @Published var biometricEntries: [BiometricEntry] = []
 
     private let fileName = "workoutData.json"
 
@@ -19,6 +21,10 @@ class WorkoutStore: ObservableObject {
         
         if workouts.isEmpty {
             addDummyData()
+        }
+        
+        if biometricMetrics.isEmpty {
+            biometricMetrics = Self.defaultBiometrics()
         }
     }
 
@@ -162,6 +168,48 @@ class WorkoutStore: ObservableObject {
         return "Mixed Day"
     }
 
+    func deleteBiometricMetric(_ metric: BiometricMetric) {
+        if let index = biometricMetrics.firstIndex(where: { $0.id == metric.id }) {
+            biometricMetrics.remove(at: index)
+            // Also delete associated entries? Or keep them orphaned? 
+            // Better to delete them to avoid clutter.
+            biometricEntries.removeAll(where: { $0.metricId == metric.id })
+            save()
+        }
+    }
+    
+    func addBiometricMetric(name: String, unit: BiometricUnit) {
+        let metric = BiometricMetric(name: name, unit: unit)
+        biometricMetrics.append(metric)
+        save()
+    }
+    
+    func addBiometricEntry(metricId: UUID, value: Double, date: Date, note: String? = nil) {
+        let entry = BiometricEntry(metricId: metricId, value: value, date: date, note: note)
+        biometricEntries.append(entry)
+        save()
+    }
+    
+    func deleteBiometricEntry(_ entry: BiometricEntry) {
+        if let index = biometricEntries.firstIndex(where: { $0.id == entry.id }) {
+            biometricEntries.remove(at: index)
+            save()
+        }
+    }
+    
+    func latestEntry(for metric: BiometricMetric) -> BiometricEntry? {
+        biometricEntries
+            .filter { $0.metricId == metric.id }
+            .sorted(by: { $0.date > $1.date }) // Descending date
+            .first
+    }
+    
+    func entries(for metric: BiometricMetric) -> [BiometricEntry] {
+        biometricEntries
+            .filter { $0.metricId == metric.id }
+            .sorted(by: { $0.date < $1.date }) // Ascending date for charts/lists
+    }
+
     // MARK: - Export
 
     /// Exports all workout data to a CSV string
@@ -200,7 +248,12 @@ class WorkoutStore: ObservableObject {
     /// Exports the full app data (exercises + workouts) as JSON Data
     func exportFullDataToJSON() -> Data? {
         do {
-            let data = AppData(exercises: exercises, workouts: workouts)
+            let data = AppData(
+                exercises: exercises, 
+                workouts: workouts,
+                biometricMetrics: biometricMetrics,
+                biometricEntries: biometricEntries
+            )
             let encoder = JSONEncoder()
             encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
             encoder.dateEncodingStrategy = .iso8601
@@ -215,7 +268,12 @@ class WorkoutStore: ObservableObject {
 
     private func save() {
         do {
-            let data = AppData(exercises: exercises, workouts: workouts)
+            let data = AppData(
+                exercises: exercises, 
+                workouts: workouts,
+                biometricMetrics: biometricMetrics,
+                biometricEntries: biometricEntries
+            )
             let encoded = try JSONEncoder().encode(data)
             try encoded.write(to: fileURL(), options: [.atomic])
         } catch {
@@ -233,6 +291,8 @@ class WorkoutStore: ObservableObject {
             let decoded = try JSONDecoder().decode(AppData.self, from: data)
             self.exercises = decoded.exercises
             self.workouts = decoded.workouts
+            self.biometricMetrics = decoded.biometricMetrics ?? []
+            self.biometricEntries = decoded.biometricEntries ?? []
         } catch {
             print("Error loading data: \(error)")
         }
@@ -263,6 +323,18 @@ class WorkoutStore: ObservableObject {
             Exercise(name: "Plank", group: .other),
             Exercise(name: "Bicep Curl", group: .other),
             Exercise(name: "Tricep Extension", group: .other)
+        ]
+    }
+    
+    static func defaultBiometrics() -> [BiometricMetric] {
+        [
+            BiometricMetric(name: "Body Weight", unit: .lbs),
+            BiometricMetric(name: "Body Fat", unit: .percentage),
+            BiometricMetric(name: "Left Bicep", unit: .inches),
+            BiometricMetric(name: "Right Bicep", unit: .inches),
+            BiometricMetric(name: "Waist", unit: .inches),
+            BiometricMetric(name: "Chest", unit: .inches),
+            BiometricMetric(name: "Thigh", unit: .inches)
         ]
     }
 }

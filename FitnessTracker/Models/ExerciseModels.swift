@@ -100,8 +100,48 @@ struct Workout: Identifiable, Codable {
     }
 }
 
+
+enum BiometricUnit: String, Codable, CaseIterable {
+    case lbs
+    case kg
+    case inches
+    case cm
+    case percentage
+}
+
+struct BiometricMetric: Identifiable, Codable, Hashable {
+    let id: UUID
+    var name: String
+    var unit: BiometricUnit
+
+    init(id: UUID = UUID(), name: String, unit: BiometricUnit) {
+        self.id = id
+        self.name = name
+        self.unit = unit
+    }
+}
+
+struct BiometricEntry: Identifiable, Codable {
+    let id: UUID
+    var metricId: UUID
+    var value: Double
+    var date: Date
+    var note: String?
+
+    init(id: UUID = UUID(), metricId: UUID, value: Double, date: Date = Date(), note: String? = nil) {
+        self.id = id
+        self.metricId = metricId
+        self.value = value
+        self.date = date
+        self.note = note
+    }
+}
+
 /// Wrapper for saving/loading everything in one file
 struct AppData: Codable {
     var exercises: [Exercise]
     var workouts: [Workout]
+    var biometricMetrics: [BiometricMetric]?
+    var biometricEntries: [BiometricEntry]?
 }
+
