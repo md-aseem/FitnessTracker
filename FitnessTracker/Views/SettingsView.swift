@@ -3,12 +3,56 @@ import SwiftUI
 
 struct SettingsView: View {
     @EnvironmentObject var workoutStore: WorkoutStore
+    @EnvironmentObject var authManager: AuthenticationManager
     @State private var showingShareSheet = false
     @State private var shareItems: [Any] = []
     
     var body: some View {
         NavigationStack {
             List {
+                Section {
+                    HStack(spacing: 12) {
+                        if let imageURL = authManager.userProfileImageURL {
+                            AsyncImage(url: imageURL) { image in
+                                image
+                                    .resizable()
+                                    .scaledToFill()
+                            } placeholder: {
+                                Image(systemName: "person.circle.fill")
+                                    .resizable()
+                            }
+                            .frame(width: 50, height: 50)
+                            .clipShape(Circle())
+                        } else {
+                            Image(systemName: "person.circle.fill")
+                                .resizable()
+                                .frame(width: 50, height: 50)
+                                .foregroundStyle(.secondary)
+                        }
+                        
+                        VStack(alignment: .leading) {
+                            if let name = authManager.userName {
+                                Text(name)
+                                    .font(.headline)
+                            }
+                            if let email = authManager.userEmail {
+                                Text(email)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                    .padding(.vertical, 4)
+                    
+                    Button(role: .destructive) {
+                        authManager.signOut()
+                    } label: {
+                        Text("Sign Out")
+                    }
+                } header: {
+                    Text("Profile")
+                }
+
                 Section {
                     Button {
                         exportCSV()
@@ -136,4 +180,5 @@ struct ShareSheet: UIViewControllerRepresentable {
 #Preview {
     SettingsView()
         .environmentObject(WorkoutStore())
+        .environmentObject(AuthenticationManager())
 }
