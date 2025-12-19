@@ -1,0 +1,12 @@
+147,148c147,148
+<    if((simTime >=  7.95*CONVERT_HOURS_TO_SECONDS) && (simTime <= 12.00*CONVERT_HOURS_TO_SECONDS))  currentPower =  maxPower;
+<    if((simTime >= 13.00*CONVERT_HOURS_TO_SECONDS) && (simTime <= 17.05*CONVERT_HOURS_TO_SECONDS))  currentPower = -maxPower;
+---
+>    if((simTime >=  10.05*CONVERT_HOURS_TO_SECONDS) && (simTime <= 12.00*CONVERT_HOURS_TO_SECONDS))  currentPower =  maxPower;
+>    if((simTime >= 13.00*CONVERT_HOURS_TO_SECONDS) && (simTime <= 14.95*CONVERT_HOURS_TO_SECONDS))  currentPower = -maxPower;
+197,198c197,198
+<    if((simTime >=  7.95*CONVERT_HOURS_TO_SECONDS) && (simTime <= 12.00*CONVERT_HOURS_TO_SECONDS))  currentCurrent =  150.0;
+<    if((simTime >= 13.00*CONVERT_HOURS_TO_SECONDS) && (simTime <= 17.05*CONVERT_HOURS_TO_SECONDS))  currentCurrent = -150.0;
+---
+>    if((simTime >=  9.95*CONVERT_HOURS_TO_SECONDS) && (simTime <= 12.00*CONVERT_HOURS_TO_SECONDS))  currentCurrent =  150.0;
+>    if((simTime >= 13.00*CONVERT_HOURS_TO_SECONDS) && (simTime <= 15.05*CONVERT_HOURS_TO_SECONDS))  currentCurrent = -150.0;
