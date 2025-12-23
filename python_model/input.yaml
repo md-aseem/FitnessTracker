@@ -1,0 +1,51 @@
+ambient_temperature: 35
+initial_battery_temp: 20
+max_charge_rate: 0.44
+max_discharge_rate: 0.5
+battery_type: catl_306           # eve_306, catl_306
+battery_life: eol                # bol, eol
+chiller_model: envicool_55kW_c/2 # envicool_55kW_c/4  or envicool_55kW_c/2   or
+                                 # bergstrom_55kW_c/4 or bergstrom_55kW_c/2
+
+chiller_noise_kit: False         # True/False
+initial_soc: 0.99
+
+sunrise_time: 7
+sunset_time: 19
+
+control_scheme: battery_temp_control
+
+
+battery:
+  chemistry: NMC811
+  capacity_ah: 50
+  nominal_voltage: 3.7
+  mass_kg: 0.95
+  thermal:
+    heat_capacity_j_per_kgk: 1100
+    thermal_conductivity_w_per_mk: 1.5
+
+container:
+  material: aluminum
+  wall_thickness_m: 0.002
+  thermal:
+    conductivity_w_per_mk: 205
+    emissivity: 0.1
+  geometry:
+    type: box
+    dimensions:
+      x: 0.3
+      y: 0.2
+      z: 0.15
+
+environment:
+  ambient_temperature_c: 25
+  convection_coefficient_w_per_m2k: 8
+
+operation:
+  time_s: [0, 100, 200, 300]
+  current_a: [0, 10, 10, 0]
+
+solver:
+  time_step_s: 0.5
+  total_time_s: 300
