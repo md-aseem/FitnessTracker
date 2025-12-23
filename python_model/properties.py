@@ -1,6 +1,8 @@
 from pydantic import BaseModel
 import numpy as np
 from typing import Optional, List
+from dataclasses import dataclass
+
 ### input config
 class InputConfig(BaseModel):
     ambient_temperature: float
@@ -18,32 +20,36 @@ class InputConfig(BaseModel):
 
 
 ### module configs
-class ControlConfig(BaseModel):
+@dataclass
+class ControlConfig:
     control_scheme: str
 
-class BatteryConfig(BaseModel):
+@dataclass
+class BatteryConfig:
     battery_type: str
     battery_life: str
 
     # OCV data
-    ocv_soc_bp: List[float] | np.ndarray
-    ocv_values_bp: List[float] | np.ndarray
+    ocv_soc_bp: List[float]
+    ocv_values_bp: List[float]
 
     # Thermal data
 
-
-class ChillerConfig(BaseModel):
+@dataclass
+class ChillerConfig:
     chiller_model: str
     chiller_noise_kit: bool
 
-class EnvironmentConfig(BaseModel):
-    ambient_temperature: float | np.ndarray
+@dataclass
+class EnvironmentConfig:
+    ambient_temperature: float
     sunrise_time: int
     sunset_time: int
 
 
 ### combined system config
-class SystemConfig(BaseModel):
+@dataclass
+class SystemConfig:
 
     control_config: ControlConfig
     battery_config: BatteryConfig
