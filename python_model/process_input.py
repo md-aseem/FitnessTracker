@@ -17,8 +17,7 @@ def load_input_config(path: str = None) -> InputConfig:
 
     return InputConfig.model_validate(raw_data)
 
-
-def load_library_data():
+def load_library_data() -> dict:
 
     path = Path(__file__).parent / "data" / "library.yaml"
     config_path = Path(path)
@@ -57,11 +56,6 @@ def build_battery_config(input_config: InputConfig,
 
     return battery_config
 
-def build_system_config(input_config: InputConfig) -> SystemConfig:
-
-    battery_config = build_battery_config(input_config)
-
-    return SystemConfig.model_validate(input_config)
 
 if __name__ == "__main__":
     # Test loading the default config
@@ -71,6 +65,6 @@ if __name__ == "__main__":
         battery_config = build_battery_config(input_config, library_data)
 
         print("Successfully loaded config:")
-        print(input_config.model_dump_json(indent=2))
+        print(battery_config)
     except Exception as e:
         print(f"Failed to load config: {e}")
