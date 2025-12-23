@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 import numpy as np
-from typing import Optional, List
+import pandas as pd
 from dataclasses import dataclass
 
 ### input config
@@ -30,10 +30,10 @@ class BatteryConfig:
     battery_life: str
 
     # OCV data
-    ocv_soc_bp: List[float]
-    ocv_values_bp: List[float]
+    ocv_df: pd.DataFrame
 
     # Thermal data
+    heat_gen_df: pd.DataFrame
 
 @dataclass
 class ChillerConfig:
