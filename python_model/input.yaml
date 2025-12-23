@@ -3,7 +3,7 @@ initial_battery_temp: 20
 max_charge_rate: 0.44
 max_discharge_rate: 0.5
 battery_type: catl_306           # eve_306, catl_306
-battery_life: eol                # bol, eol
+battery_life: bol                # bol, eol
 chiller_model: envicool_55kW_c/2 # envicool_55kW_c/4  or envicool_55kW_c/2   or
                                  # bergstrom_55kW_c/4 or bergstrom_55kW_c/2
 
