@@ -11,7 +11,7 @@ def build_chiller_specs(input_config: InputConfig, library_data) -> ChillerSpecs
     quantum = input_config.quantum
 
     is_envicool = 'envicool_55kW' in chiller_model
-    if is_envicool and int(quantum) == 2:
+    if is_envicool and int(quantum) == '2p0':
         chiller_curves_dir = library_data['chillers']['envicool_q2_55kw']['chiller_curves_dir']
 
         low_temp = pd.read_csv(Path(__file__).parent.parent.parent / chiller_curves_dir / "envicool_55kw_18c.csv")

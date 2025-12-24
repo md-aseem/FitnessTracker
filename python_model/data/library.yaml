@@ -55,6 +55,20 @@ containers:
     radiation_surface_ratio: 0.4
     container_wall_UA: 103.0   # W/K, from some CFD analysis -> not used now
     container_wall_pcnt_steel: 0.15
+    steel_wall:
+      percent_total_area: 0.3
+      thickness: 0.040
+      density: 1958.25 # 7833.0/4.0
+      conductivity: 50.0
+      cp: 465.0
+
+    insulation_wall:
+      percent_total_area: 0.7
+      thickness: 0.040
+      density: 150.0
+      conductivity: 0.045
+      cp: 700
+
   quantum_3p0:
     container_wall_area: 71.91 # m^2
 

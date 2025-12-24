@@ -1,13 +1,13 @@
 from pydantic import BaseModel
 import numpy as np
 import pandas as pd
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 ### input config
 class InputConfig(BaseModel):
 
     ## high-level
-    quantum: float
+    quantum: str
 
     ## operational
     c_rate: float
@@ -67,6 +67,17 @@ class ChillerSpecs:
     bat_volume_flow_rate_per_prcnt: float
     pcs_volume_flow_rate_per_prcnt: float
 
+@dataclass
+class WallSpecs:
+    density: float
+    area: float
+    mass: float
+    cp: float
+    conductivity: float
+    thickness: float
+    # R: field(default_factory=lambda: np.ones(3)) # 3 nodes # better to define it in the simulation?
+    innerUA: float = 8.0
+    outerUA: float = 8.0
 
 @dataclass
 class EnvironmentSpecs:
@@ -88,7 +99,8 @@ class SystemSpecs:
 
     battery_specs: BatterySpecs
     chiller_specs: ChillerSpecs
-
+    steel_wall_specs: WallSpecs # wall 1
+    insulation_wall_specs: WallSpecs # wall 2
 
 
 ### Solver specs
