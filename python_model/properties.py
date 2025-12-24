@@ -50,18 +50,18 @@ class EnvironmentSpecs:
     sunset_time: int
 
 
-### combined system config
+### combined system specs
 @dataclass
 class SystemSpecs:
 
-    control_config: ControlSpecs
-    battery_config: BatterySpecs
-    chiller_config: ChillerSpecs
-    environment_config: EnvironmentSpecs
+    control_specs: ControlSpecs
+    battery_specs: BatterySpecs
+    chiller_specs: ChillerSpecs
+    environment_specs: EnvironmentSpecs
 
 
 
-### Solver Config
+### Solver specs
 
 class SolverConfig(BaseModel):
     pass
