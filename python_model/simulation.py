@@ -1,11 +1,9 @@
 ### This file contains the logic to run the simulation. This is the heart of the model. ###
-import numpy as np
-import pandas as pd
-from properties import SystemConfig
+from python_model.preprocess.properties import SystemSpecs
 
 
 class Simulation:
-    def __init__(self, config: SystemConfig):
+    def __init__(self, config: SystemSpecs):
         self.config = config
         print(f"Simulation initialized with battery type: {self.config.battery_type}")
 

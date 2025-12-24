@@ -6,7 +6,7 @@ import os
 
 def load_input_config(path: str = None) -> InputConfig:
     if path is None:
-        path = Path(__file__).parent / "input.yaml"
+        path = Path(__file__).parent.parent / "input.yaml"
     
     config_path = Path(path)
     if not config_path.exists():
@@ -19,7 +19,7 @@ def load_input_config(path: str = None) -> InputConfig:
 
 def load_library_data() -> dict:
 
-    path = Path(__file__).parent / "data" / "library.yaml"
+    path = Path(__file__).parent.parent / "data" / "library.yaml"
     config_path = Path(path)
     if not config_path.exists():
         raise FileNotFoundError(f"Library file not found: {path} (Resolved path: {config_path.absolute()})")
@@ -37,14 +37,14 @@ def build_battery_config(input_config: InputConfig,
 
     # load ocv
     ocv_path = library_data['batteries'][battery_type]["ocv_path"]
-    ocv_df = pd.read_csv(ocv_path)
+    ocv_df = pd.read_csv(Path(__file__).parent.parent / ocv_path)
     ocv_df.sort_values(by=["soc"], inplace=True)
 
     # load heat gen data
     heat_gen_data_path = os.path.join(library_data['batteries'][battery_type]["heat_gen_dir"],
                                       f"{battery_type}_{battery_life}.csv")
 
-    heat_gen_df = pd.read_csv(heat_gen_data_path)
+    heat_gen_df = pd.read_csv(Path(__file__).parent.parent / heat_gen_data_path)
 
     # bringing everything together for battery config
     battery_config = BatterySpecs(
@@ -69,10 +69,10 @@ def build_chiller_config(input_config: InputConfig, library_data) -> ChillerSpec
     if is_envicool and int(quantum) == 2:
         chiller_curves_dir = library_data['chillers']['envicool_q2_55kw']['chiller_curves_dir']
 
-        low_temp = pd.read_csv(os.path.join(chiller_curves_dir, "envicool_55kw_18c.csv"))
+        low_temp = pd.read_csv(Path(__file__).parent.parent / chiller_curves_dir / "envicool_55kw_18c.csv")
         low_temp['temp'] = 18
 
-        high_temp = pd.read_csv(os.path.join(chiller_curves_dir,  "envicool_55kw_23c.csv"))
+        high_temp = pd.read_csv(Path(__file__).parent.parent / chiller_curves_dir / "envicool_55kw_23c.csv")
         high_temp['temp'] = 23
 
         chiller_curves_df = pd.concat([low_temp, high_temp], ignore_index=True)
