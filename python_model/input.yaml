@@ -19,36 +19,7 @@ sunset_time: 19
 control_scheme: battery_temp_control
 
 
-battery:
-  chemistry: NMC811
-  capacity_ah: 50
-  nominal_voltage: 3.7
-  mass_kg: 0.95
-  thermal:
-    heat_capacity_j_per_kgk: 1100
-    thermal_conductivity_w_per_mk: 1.5
-
-container:
-  material: aluminum
-  wall_thickness_m: 0.002
-  thermal:
-    conductivity_w_per_mk: 205
-    emissivity: 0.1
-  geometry:
-    type: box
-    dimensions:
-      x: 0.3
-      y: 0.2
-      z: 0.15
-
-environment:
-  ambient_temperature_c: 25
-  convection_coefficient_w_per_m2k: 8
-
-operation:
-  time_s: [0, 100, 200, 300]
-  current_a: [0, 10, 10, 0]
-
-solver:
-  time_step_s: 0.5
-  total_time_s: 300
+# initialization
+soc_init: 0.01
+soh_init: 1
+battery_temp_init: 20

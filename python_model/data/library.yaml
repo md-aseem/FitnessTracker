@@ -3,11 +3,18 @@ batteries:
     ocv_path: data/ocv/catl_306.csv
     heat_gen_dir: data/heat_gen
     capacity_ah: 306
-    thermal:
-      heat_capacity_j_per_kgk: 1100
-      thermal_conductivity_w_per_mk: 1.5
-    geometry:
-      mass_kg: 0.95
+    physical:
+      mass_kg: 80 * 320 # kg, mass of all batteries in Q3.0 # Question: why Q3 mass in Q2 model?
+      cp: 990
+      k: 9.0
+      area: 80 * 1 # Question: which area? top area I assume?
+      height: 0.204
+      bottomUA: 100.0
+      topUA: 15.0
+      total_container_energy: 3.47 * 52 * 80 * 304 # Question: max_volts * n_cells_in_a_module * n_modules_in_a_container * capacity_ah?
+      # ambiguous quantities
+      hysteresis: 1.0
+      temperature_target: 20 # Question: this should be here?
 
   eve_306:
     ocv_path: ocv/eve_306.csv
@@ -21,3 +28,39 @@ batteries:
 chillers:
   envicool_q2_55kw:
     chiller_curves_dir: data/chiller_performance/quantum_2p0
+    battery_sensitivity: 3.0 # Question: what?
+    inverter_sensitivity: 30.0 # Question: what?
+
+    # ambiguous
+    battery_temp_target: 295.15 - 273.15 # Question: should it be here?
+    inverter_temp_target: 303.15 - 273.15 # Question: same as above
+
+    electronics_aux_power: 200.0
+
+    # these power values are multiplied by percent, from 0 to 1, to get power of each component in the code
+    pcs_pump_power_per_pcnt: 0.0 # Question: why zero?
+    bat_pump_power_prcnt: 0.0
+    fan_aux_power_per_pcnt: 0.0
+
+    # flow rate
+    bat_volume_flow_rate_per_prcnt: 400/60000.0 # internal units are always m3/s
+    pcs_volume_flow_rate_per_prcnt: 120/60000.0 # internal units are always m3/s
+
+
+containers:
+  quantum_1p0:
+    container_wall_area: 37.38 # m^2
+  quantum_2p0:
+    container_wall_area: 63.78 # m^2
+    radiation_surface_ratio: 0.4
+    container_wall_UA: 103.0   # W/K, from some CFD analysis -> not used now
+    container_wall_pcnt_steel: 0.15
+  quantum_3p0:
+    container_wall_area: 71.91 # m^2
+
+
+hvac:
+  UA: 2.0
+  temperature_target: 40 # Question: should it be here?
+  hysteresis: 20.0 # Question: why?
+
