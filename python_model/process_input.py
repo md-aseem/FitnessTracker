@@ -1,7 +1,7 @@
 import pandas as pd
 import yaml
 from pathlib import Path
-from properties import SystemConfig, InputConfig, BatteryConfig, ChillerConfig
+from properties import SystemSpecs, InputConfig, BatterySpecs, ChillerSpecs
 import os
 
 def load_input_config(path: str = None) -> InputConfig:
@@ -30,7 +30,7 @@ def load_library_data() -> dict:
     return library_data
 
 def build_battery_config(input_config: InputConfig,
-                         library_data) -> BatteryConfig:
+                         library_data) -> BatterySpecs:
 
     battery_type = input_config.battery_type
     battery_life = input_config.battery_life
@@ -47,7 +47,7 @@ def build_battery_config(input_config: InputConfig,
     heat_gen_df = pd.read_csv(heat_gen_data_path)
 
     # bringing everything together for battery config
-    battery_config = BatteryConfig(
+    battery_config = BatterySpecs(
         battery_type=battery_type,
         battery_life=battery_life,
         ocv_df=ocv_df,
@@ -56,7 +56,7 @@ def build_battery_config(input_config: InputConfig,
 
     return battery_config
 
-def build_chiller_config(input_config: InputConfig, library_data) -> ChillerConfig:
+def build_chiller_config(input_config: InputConfig, library_data) -> ChillerSpecs:
     """
     The code to build chiller config.
     The code needs improvement. There is a lot of hardcoding right now.
@@ -80,7 +80,7 @@ def build_chiller_config(input_config: InputConfig, library_data) -> ChillerConf
     else:
         chiller_curves_df = pd.DataFrame()
 
-    return ChillerConfig(
+    return ChillerSpecs(
         chiller_model=chiller_model,
         chiller_noise_kit=input_config.chiller_noise_kit,
         chiller_curves_df=chiller_curves_df
