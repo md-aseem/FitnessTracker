@@ -1,0 +1,23 @@
+batteries:
+  catl_306:
+    ocv_path: data/ocv/catl_306.csv
+    heat_gen_dir: data/heat_gen
+    capacity_ah: 306
+    thermal:
+      heat_capacity_j_per_kgk: 1100
+      thermal_conductivity_w_per_mk: 1.5
+    geometry:
+      mass_kg: 0.95
+
+  eve_306:
+    ocv_path: ocv/eve_306.csv
+    thermal:
+      heat_capacity_j_per_kgk: 1050
+      thermal_conductivity_w_per_mk: 1.4
+    geometry:
+      mass_kg: 0.92
+
+
+chillers:
+  envicool_q2_55kw:
+    chiller_curves_dir: data/chiller_performance/quantum_2p0
