@@ -1,7 +1,7 @@
 import pandas as pd
 import yaml
 from pathlib import Path
-from properties import SystemConfig, InputConfig, BatteryConfig
+from properties import SystemConfig, InputConfig, BatteryConfig, ChillerConfig
 import os
 
 def load_input_config(path: str = None) -> InputConfig:
@@ -56,6 +56,36 @@ def build_battery_config(input_config: InputConfig,
 
     return battery_config
 
+def build_chiller_config(input_config: InputConfig, library_data) -> ChillerConfig:
+    """
+    The code to build chiller config.
+    The code needs improvement. There is a lot of hardcoding right now.
+    """
+    chiller_model = input_config.chiller_model
+    quantum = input_config.quantum
+
+    is_envicool = 'envicool_55kW' in chiller_model
+
+    if is_envicool and int(quantum) == 2:
+        chiller_curves_dir = library_data['chillers']['envicool_q2_55kw']['chiller_curves_dir']
+
+        low_temp = pd.read_csv(os.path.join(chiller_curves_dir, "envicool_55kw_18c.csv"))
+        low_temp['temp'] = 18
+
+        high_temp = pd.read_csv(os.path.join(chiller_curves_dir,  "envicool_55kw_23c.csv"))
+        high_temp['temp'] = 23
+
+        chiller_curves_df = pd.concat([low_temp, high_temp], ignore_index=True)
+
+    else:
+        chiller_curves_df = pd.DataFrame()
+
+    return ChillerConfig(
+        chiller_model=chiller_model,
+        chiller_noise_kit=input_config.chiller_noise_kit,
+        chiller_curves_df=chiller_curves_df
+    )
+
 
 if __name__ == "__main__":
     # Test loading the default config
@@ -63,6 +93,7 @@ if __name__ == "__main__":
         input_config = load_input_config()
         library_data = load_library_data()
         battery_config = build_battery_config(input_config, library_data)
+        chiller_config = build_chiller_config(input_config, library_data)
 
         print("Successfully loaded config:")
         print(battery_config)

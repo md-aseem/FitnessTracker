@@ -1,3 +1,4 @@
+quantum: 2.0
 ambient_temperature: 35
 initial_battery_temp: 20
 max_charge_rate: 0.44

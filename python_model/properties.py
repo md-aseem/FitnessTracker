@@ -5,6 +5,7 @@ from dataclasses import dataclass
 
 ### input config
 class InputConfig(BaseModel):
+    quantum: float
     ambient_temperature: float
     initial_battery_temp: float
     max_charge_rate: float
@@ -39,6 +40,8 @@ class BatteryConfig:
 class ChillerConfig:
     chiller_model: str
     chiller_noise_kit: bool
+
+    chiller_curves_df: pd.DataFrame
 
 @dataclass
 class EnvironmentConfig:
