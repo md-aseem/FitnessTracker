@@ -32,19 +32,19 @@ chillers:
     inverter_sensitivity: 30.0 # Question: what?
 
     # ambiguous
-    battery_temp_target: 295.15 - 273.15 # Question: should it be here?
-    inverter_temp_target: 303.15 - 273.15 # Question: same as above
+    battery_temp_target_C: 22 # Question: should it be here?
+    inverter_temp_target_C: 30 # Question: same as above
 
     electronics_aux_power: 200.0
 
     # these power values are multiplied by percent, from 0 to 1, to get power of each component in the code
     pcs_pump_power_per_pcnt: 0.0 # Question: why zero?
-    bat_pump_power_prcnt: 0.0
+    bat_pump_power_per_prcnt: 0.0
     fan_aux_power_per_pcnt: 0.0
 
     # flow rate
-    bat_volume_flow_rate_per_prcnt: 400/60000.0 # internal units are always m3/s
-    pcs_volume_flow_rate_per_prcnt: 120/60000.0 # internal units are always m3/s
+    bat_volume_flow_rate_per_prcnt: 0.00666 # 400/60000.0 # internal units are always m3/s
+    pcs_volume_flow_rate_per_prcnt: 0.00200   # 120/60000.0 # internal units are always m3/s
 
 
 containers:
