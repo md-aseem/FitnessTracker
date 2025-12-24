@@ -1,4 +1,4 @@
-from python_model.preprocess.generate_operational_profiles import generate_current_profile_for_a_day
+from python_model.preprocess.profiles import generate_current_profile_for_a_day
 import numpy as np
 import matplotlib.pyplot as plt
 

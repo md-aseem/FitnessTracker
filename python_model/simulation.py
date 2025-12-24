@@ -1,6 +1,6 @@
 ### This file contains the logic to run the simulation. This is the heart of the model. ###
 from python_model.preprocess.properties import SystemSpecs
-from python_model.preprocess.process_input import build_system_specs
+from python_model.preprocess.builders.system import build_system_specs
 
 
 class Simulation:
