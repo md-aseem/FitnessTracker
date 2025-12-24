@@ -5,7 +5,14 @@ from dataclasses import dataclass
 
 ### input config
 class InputConfig(BaseModel):
+
+    ## high-level
     quantum: float
+
+    ## operational
+    c_rate: float
+    n_cycles: int
+
     ambient_temperature: float
     initial_battery_temp: float
     max_charge_rate: float
@@ -50,14 +57,19 @@ class EnvironmentSpecs:
     sunset_time: int
 
 
+@dataclass
+class OperationalSpecs:
+    time_s: np.ndarray
+    current_profile: np.ndarray
+    ambient_profile: np.ndarray
+
+
 ### combined system specs
 @dataclass
 class SystemSpecs:
 
-    control_specs: ControlSpecs
     battery_specs: BatterySpecs
     chiller_specs: ChillerSpecs
-    environment_specs: EnvironmentSpecs
 
 
 

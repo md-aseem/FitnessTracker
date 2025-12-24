@@ -1,9 +1,9 @@
 import pandas as pd
 import yaml
 from pathlib import Path
-from properties import SystemSpecs, InputConfig, BatterySpecs, ChillerSpecs
+from python_model.preprocess.properties import SystemSpecs, InputConfig, BatterySpecs, ChillerSpecs, OperationalSpecs
 import os
-
+from python_model.preprocess.generate_operational_profiles import generate_current_profile_for_a_day, generate_ambient_temp_profile_for_a_day
 def load_input_config(path: str = None) -> InputConfig:
     if path is None:
         path = Path(__file__).parent.parent / "input.yaml"
@@ -29,8 +29,8 @@ def load_library_data() -> dict:
 
     return library_data
 
-def build_battery_config(input_config: InputConfig,
-                         library_data) -> BatterySpecs:
+def build_battery_specs(input_config: InputConfig,
+                        library_data) -> BatterySpecs:
 
     battery_type = input_config.battery_type
     battery_life = input_config.battery_life
@@ -47,16 +47,16 @@ def build_battery_config(input_config: InputConfig,
     heat_gen_df = pd.read_csv(Path(__file__).parent.parent / heat_gen_data_path)
 
     # bringing everything together for battery config
-    battery_config = BatterySpecs(
+    battery_specs = BatterySpecs(
         battery_type=battery_type,
         battery_life=battery_life,
         ocv_df=ocv_df,
         heat_gen_df=heat_gen_df
     )
 
-    return battery_config
+    return battery_specs
 
-def build_chiller_config(input_config: InputConfig, library_data) -> ChillerSpecs:
+def build_chiller_specs(input_config: InputConfig, library_data) -> ChillerSpecs:
     """
     The code to build chiller config.
     The code needs improvement. There is a lot of hardcoding right now.
@@ -86,16 +86,41 @@ def build_chiller_config(input_config: InputConfig, library_data) -> ChillerSpec
         chiller_curves_df=chiller_curves_df
     )
 
+def build_system_specs() -> SystemSpecs:
+
+    input_config = load_input_config()
+    library_data = load_library_data()
+
+    battery_specs = build_battery_specs(input_config, library_data)
+    chiller_specs = build_chiller_specs(input_config, library_data)
+    system_specs = SystemSpecs(battery_specs=battery_specs, chiller_specs=chiller_specs)
+
+    return system_specs
+
+
+def load_operation_specs() -> OperationalSpecs:
+    input_config = load_input_config()
+    library_data = load_library_data()
+
+    c_rate = input_config.c_rate
+    n_cycles = input_config.n_cycles
+    capacity_ah = library_data['batteries'][input_config.battery_type]['capacity_ah']
+    time_s, current_profile = generate_current_profile_for_a_day(c_rate=c_rate,
+                                                                 n_cycles=n_cycles,
+                                                                 capacity_ah=capacity_ah,
+                                                                 )
+
+    ambient_temp_constant = input_config.ambient_temperature
+    time_s, ambient_profile = generate_ambient_temp_profile_for_a_day(ambient_temp_constant)
+
+    return OperationalSpecs(time_s=time_s, current_profile=current_profile, ambient_profile=ambient_profile)
 
 if __name__ == "__main__":
     # Test loading the default config
     try:
-        input_config = load_input_config()
-        library_data = load_library_data()
-        battery_config = build_battery_config(input_config, library_data)
-        chiller_config = build_chiller_config(input_config, library_data)
-
+        system_specs = build_system_specs()
+        operational_specs = load_operation_specs()
         print("Successfully loaded config:")
-        print(battery_config)
+        print(system_specs)
     except Exception as e:
         print(f"Failed to load config: {e}")

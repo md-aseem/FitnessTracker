@@ -1,6 +1,8 @@
 quantum: 2.0
 ambient_temperature: 35
 initial_battery_temp: 20
+c_rate: 0.5
+n_cycles: 2
 max_charge_rate: 0.44
 max_discharge_rate: 0.5
 battery_type: catl_306           # eve_306, catl_306
