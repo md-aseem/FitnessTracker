@@ -20,13 +20,13 @@ class InputConfig(BaseModel):
     control_scheme: str
 
 
-### module configs
+### module specs
 @dataclass
-class ControlConfig:
+class ControlSpecs:
     control_scheme: str
 
 @dataclass
-class BatteryConfig:
+class BatterySpecs:
     battery_type: str
     battery_life: str
 
@@ -37,14 +37,14 @@ class BatteryConfig:
     heat_gen_df: pd.DataFrame
 
 @dataclass
-class ChillerConfig:
+class ChillerSpecs:
     chiller_model: str
     chiller_noise_kit: bool
 
     chiller_curves_df: pd.DataFrame
 
 @dataclass
-class EnvironmentConfig:
+class EnvironmentSpecs:
     ambient_temperature: float
     sunrise_time: int
     sunset_time: int
@@ -52,12 +52,12 @@ class EnvironmentConfig:
 
 ### combined system config
 @dataclass
-class SystemConfig:
+class SystemSpecs:
 
-    control_config: ControlConfig
-    battery_config: BatteryConfig
-    chiller_config: ChillerConfig
-    environment_config: EnvironmentConfig
+    control_config: ControlSpecs
+    battery_config: BatterySpecs
+    chiller_config: ChillerSpecs
+    environment_config: EnvironmentSpecs
 
 
 
