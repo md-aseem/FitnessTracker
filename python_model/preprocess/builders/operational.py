@@ -1,6 +1,7 @@
 from python_model.preprocess.properties import OperationalSpecs
 from python_model.preprocess.loaders import load_input_config, load_library_data
 from python_model.preprocess.profiles import generate_current_profile_for_a_day, generate_ambient_temp_profile_for_a_day
+from python_model.preprocess.profiles.radiation import generate_radiation_load_for_a_day
 
 def load_operation_specs() -> OperationalSpecs:
     input_config = load_input_config()
@@ -16,5 +17,9 @@ def load_operation_specs() -> OperationalSpecs:
 
     ambient_temp_constant = input_config.ambient_temperature
     time_s, ambient_profile = generate_ambient_temp_profile_for_a_day(ambient_temp_constant)
+    time_s, radiation_profile = generate_radiation_load_for_a_day()
 
-    return OperationalSpecs(time_s=time_s, current_profile=current_profile, ambient_profile=ambient_profile)
+    return OperationalSpecs(time_s=time_s,
+                            current_profile=current_profile,
+                            ambient_profile=ambient_profile,
+                            radiation_profile=radiation_profile)

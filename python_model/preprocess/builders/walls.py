@@ -12,11 +12,11 @@ def build_wall_specs(input_config, library_data):
     steel_wall_mass = (steel_wall_area * library_data['containers'][quantum]['steel_wall']['thickness'] *
                        library_data['containers'][quantum]['steel_wall']['density'])
 
-    steel_wall_specs = WallSpecs(density=library_data['containers'][quantum]['steel_wall']['density'],
+    steel_wall_specs = WallSpecs(rho=library_data['containers'][quantum]['steel_wall']['density'],
                                   area=steel_wall_area,
                                   mass=steel_wall_mass,
                                   cp=library_data['containers'][quantum]['steel_wall']['cp'],
-                                  conductivity=library_data['containers'][quantum]['steel_wall']['conductivity'],
+                                  k=library_data['containers'][quantum]['steel_wall']['conductivity'],
                                   thickness=library_data['containers'][quantum]['steel_wall']['thickness'])
 
     insulation_wall_area = (library_data['containers'][quantum]['container_wall_area'] *
@@ -25,11 +25,11 @@ def build_wall_specs(input_config, library_data):
     insulation_wall_mass = (insulation_wall_area * library_data['containers'][quantum]['insulation_wall']['thickness'] *
                        library_data['containers'][quantum]['insulation_wall']['density'])
 
-    insulation_wall_specs = WallSpecs(density=library_data['containers'][quantum]['insulation_wall']['density'],
+    insulation_wall_specs = WallSpecs(rho=library_data['containers'][quantum]['insulation_wall']['density'],
                                   area=insulation_wall_area,
                                   mass=insulation_wall_mass,
                                   cp=library_data['containers'][quantum]['insulation_wall']['cp'],
-                                  conductivity=library_data['containers'][quantum]['insulation_wall']['conductivity'],
+                                  k=library_data['containers'][quantum]['insulation_wall']['conductivity'],
                                   thickness=library_data['containers'][quantum]['insulation_wall']['thickness'])
 
     return steel_wall_specs, insulation_wall_specs

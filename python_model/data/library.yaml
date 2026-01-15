@@ -52,9 +52,9 @@ containers:
     container_wall_area: 37.38 # m^2
   quantum_2p0:
     container_wall_area: 63.78 # m^2
-    radiation_surface_ratio: 0.4
+    radiation_surface_prcnt: 0.4
     container_wall_UA: 103.0   # W/K, from some CFD analysis -> not used now
-    container_wall_pcnt_steel: 0.15
+    container_wall_prcnt_steel: 0.15
     steel_wall:
       percent_total_area: 0.3
       thickness: 0.040
