@@ -22,18 +22,19 @@ class Simulation:
         self.insulation_wall_specs = self.system_specs.insulation_wall_specs
 
         # heat and temperature 2D vectors. First dim is time, Second is space/nodes
-        self.steel_walls_temp = np.ones([self.n, 7])
-        self.insulation_walls_temp = np.ones([self.n, 7])
+        # Initialize with initial ambient temperature
+        initial_temp = self.ambient_temp_profile[0]
+        self.steel_walls_temp = np.full([self.n, 7], initial_temp)
+        self.insulation_walls_temp = np.full([self.n, 7], initial_temp)
 
-        self.internal_air_temp = np.ones([self.n]) # no discretization -> no 2nd dim
+        self.internal_air_temp = np.full([self.n], initial_temp) # no discretization -> no 2nd dim
 
 
     def run(self):
         print(f"Running simulation...")
 
 
-        # calculate_ambient_heat_load_and_internal_air_temp
-
+        # Main time-stepping loop
         for i in range(1, self.time_s.size):
 
             ### Calculating internal air temp and walls temp
