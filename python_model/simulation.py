@@ -38,6 +38,7 @@ class Simulation:
         for i in range(1, self.time_s.size):
 
             ### Calculating internal air temp and walls temp
+            # Steel Wall Update
             steel_flux_to_outer_node = (self.radiation_heat_load[i] +                                                                  # heat from radiation
                                          ((self.ambient_temp_profile[i] - self.steel_walls_temp[i, 6]) * self.steel_wall_specs.R[0]) + # heat from ambient
                                          ((self.steel_walls_temp[i, 5] - self.steel_walls_temp[i, 6]) * self.steel_wall_specs.R[1]))   # heat from internal node
@@ -46,7 +47,9 @@ class Simulation:
                                          (self.steel_walls_temp[i-1, 1] - self.steel_walls_temp[i-1, 0]) * self.steel_wall_specs.R[1] # heat from internal node
                                          )
 
-            flux_to_inner_air = (self.internal_air_temp[i-1] - self.steel_walls_temp[i-1, 0]) * self.steel_wall_specs.R[2]
+            # Flux from air to steel wall (positive means heat leaves air)
+            flux_from_air_to_steel_wall = (self.internal_air_temp[i-1] - self.steel_walls_temp[i-1, 0]) * self.steel_wall_specs.R[2]
+            flux_to_inner_air_from_walls = -flux_from_air_to_steel_wall # accumulators for air update
 
             self.steel_walls_temp[i, 0] = (self.steel_walls_temp[i-1, 0] + steel_flux_to_inner_node*self.dt /
                                            (self.steel_wall_specs.mass * self.steel_wall_specs.cp / 7))
@@ -58,6 +61,35 @@ class Simulation:
                         (self.steel_walls_temp[i-1, j-1] - self.steel_walls_temp[i-1, j]) * self.steel_wall_specs.R[1] +
                         (self.steel_walls_temp[i-1, j+1] - self.steel_walls_temp[i-1, j]) * self.steel_wall_specs.R[1]) *
                         (self.dt / (self.steel_wall_specs.mass * self.steel_wall_specs.cp / 7)))
+
+
+            # Insulation Wall Update
+            insulation_flux_to_outer_node = (((self.ambient_temp_profile[i] - self.insulation_walls_temp[i, 6]) * self.insulation_wall_specs.R[0]) +
+                                             ((self.insulation_walls_temp[i, 5] - self.insulation_walls_temp[i, 6]) * self.insulation_wall_specs.R[1]))
+
+            insulation_flux_to_inner_node = (((self.internal_air_temp[i-1] - self.insulation_walls_temp[i-1, 0]) * self.insulation_wall_specs.R[2]) +
+                                             ((self.insulation_walls_temp[i-1, 1] - self.insulation_walls_temp[i-1, 0]) * self.insulation_wall_specs.R[1]))
+
+            # Flux from air to insulation wall
+            flux_from_air_to_insulation_wall = (self.internal_air_temp[i-1] - self.insulation_walls_temp[i-1, 0]) * self.insulation_wall_specs.R[2]
+            flux_to_inner_air_from_walls += -flux_from_air_to_insulation_wall
+
+            self.insulation_walls_temp[i, 0] = (self.insulation_walls_temp[i-1, 0] + insulation_flux_to_inner_node * self.dt /
+                                                (self.insulation_wall_specs.mass * self.insulation_wall_specs.cp / 7))
+            self.insulation_walls_temp[i, 6] = (self.insulation_walls_temp[i-1, 6] + insulation_flux_to_outer_node * self.dt /
+                                                (self.insulation_wall_specs.mass * self.insulation_wall_specs.cp / 7))
+
+            for j in range(1, 6):
+                self.insulation_walls_temp[i, j] = (self.insulation_walls_temp[i-1, j] + (
+                        (self.insulation_walls_temp[i-1, j-1] - self.insulation_walls_temp[i-1, j]) * self.insulation_wall_specs.R[1] +
+                        (self.insulation_walls_temp[i-1, j+1] - self.insulation_walls_temp[i-1, j]) * self.insulation_wall_specs.R[1]) *
+                                                    (self.dt / (self.insulation_wall_specs.mass * self.insulation_wall_specs.cp / 7)))
+
+            # Internal Air Temperature Update
+            heat_into_air_from_battery = 0.0 # Placeholder as battery model is not connected yet
+            
+            self.internal_air_temp[i] = self.internal_air_temp[i-1] + (
+                -heat_into_air_from_battery + flux_to_inner_air_from_walls) * self.dt / (20.0 * 1006.0)
 
 
 
