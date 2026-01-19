@@ -27,7 +27,7 @@ class Simulation:
         self.steel_walls_temp = np.full([self.n, 7], initial_temp)
         self.insulation_walls_temp = np.full([self.n, 7], initial_temp)
 
-        self.internal_air_temp = np.full([self.n], initial_temp) # no discretization -> no 2nd dim
+        self.internal_air_temp = np.ones([self.n]) # no discretization -> no 2nd dim
 
 
     def run(self):
@@ -42,11 +42,24 @@ class Simulation:
                                          ((self.ambient_temp_profile[i] - self.steel_walls_temp[i, 6]) * self.steel_wall_specs.R[0]) + # heat from ambient
                                          ((self.steel_walls_temp[i, 5] - self.steel_walls_temp[i, 6]) * self.steel_wall_specs.R[1]))   # heat from internal node
 
-            steel_flux_to_inner_node = (((self.internal_air_temp[i] - self.steel_walls_temp[0]) * self.steel_wall_specs.R[2]) + # heat from internal air
-                                         (self.steel_walls_temp[i, 1] - self.steel_walls_temp[i, 1]) * self.steel_wall_specs.R[1] # heat from internal node
+            steel_flux_to_inner_node = (((self.internal_air_temp[i-1] - self.steel_walls_temp[i-1, 0]) * self.steel_wall_specs.R[2]) + # heat from internal air
+                                         (self.steel_walls_temp[i-1, 1] - self.steel_walls_temp[i-1, 0]) * self.steel_wall_specs.R[1] # heat from internal node
                                          )
 
-            flux_to_inner_air = (self.internal_air_temp[i] - self.steel_walls_temp[i, 0]) * self.steel_wall_specs.R[2]
+            flux_to_inner_air = (self.internal_air_temp[i-1] - self.steel_walls_temp[i-1, 0]) * self.steel_wall_specs.R[2]
+
+            self.steel_walls_temp[i, 0] = (self.steel_walls_temp[i-1, 0] + steel_flux_to_inner_node*self.dt /
+                                           (self.steel_wall_specs.mass * self.steel_wall_specs.cp / 7))
+            self.steel_walls_temp[i, 6] = (self.steel_walls_temp[i-1, 6] + steel_flux_to_outer_node*self.dt /
+                                           (self.steel_wall_specs.mass * self.steel_wall_specs.cp / 7))
+
+            for j in range(1, 6):
+                self.steel_walls_temp[i, j] = (self.steel_walls_temp[i-1,j] + (
+                        (self.steel_walls_temp[i-1, j-1] - self.steel_walls_temp[i-1, j]) * self.steel_wall_specs.R[1] +
+                        (self.steel_walls_temp[i-1, j+1] - self.steel_walls_temp[i-1, j]) * self.steel_wall_specs.R[1]) *
+                        (self.dt / (self.steel_wall_specs.mass * self.steel_wall_specs.cp / 7)))
+
+
 
     def calculate_ambient_heat_load_and_internal_air_temp(self):
 
