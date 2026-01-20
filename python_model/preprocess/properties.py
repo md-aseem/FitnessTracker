@@ -55,8 +55,9 @@ class BatterySpecs:
     initial_temperature: float
     initial_soc: float
     total_energy: float
-    n_series: int
-    n_parallel: int
+    n_cells_in_a_module: int
+    n_modules_in_a_string: int
+    n_strings: int
     cell_capacity: float
 
     dx: float = field(init=False)
@@ -69,6 +70,7 @@ class BatterySpecs:
             self.area * self.k / self.dx,
             self.area * (1 / ((1 / self.topUA) + ((self.dx / 2) / self.k)))
         ])
+        self.n_cells = self.n_cells_in_a_module * self.n_modules_in_a_string * self.n_strings
 
 @dataclass
 class ChillerSpecs:

@@ -36,8 +36,9 @@ def build_battery_specs(input_config: InputConfig,
         initial_temperature=input_config.initial_battery_temp,
         initial_soc=input_config.initial_soc,
         total_energy=(3.47*52.0)*(304.0*80.0), # from C model
-        n_series=52,
-        n_parallel=80,
+        n_cells_in_a_module=52,
+        n_modules_in_a_string=8,
+        n_strings=10,
         cell_capacity=304.0
     )
 
