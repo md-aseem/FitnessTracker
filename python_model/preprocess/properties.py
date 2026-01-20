@@ -96,6 +96,14 @@ class ChillerSpecs:
     bat_volume_flow_rate_per_prcnt: float
     pcs_volume_flow_rate_per_prcnt: float
 
+    # caps/limits
+    pump_aux_cap: float
+    comp_aux_cap: float
+    cooling_power_coef: float
+
+    def __post_init__(self):
+        self.combined_cap = 0.7 * self.comp_aux_cap + 0.15 * self.pump_aux_cap + 0.15 # ac in c-code
+
 @dataclass
 class WallSpecs:
     rho: float

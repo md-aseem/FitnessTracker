@@ -26,10 +26,14 @@ batteries:
 
 
 chillers:
-  envicool_q2_55kw:
+  envicool_q2_55kw_c/4:
     chiller_curves_dir: data/chiller_performance/quantum_2p0
-    battery_sensitivity: 3.0 # Question: what?
-    inverter_sensitivity: 30.0 # Question: what?
+    battery_sensitivity: 3.0
+    inverter_sensitivity: 30.0
+
+    pump_aux_cap: 0.52
+    comp_aux_cap: 0.71
+    cooling_power_coef: 0.818
 
     # ambiguous
     battery_temp_target_C: 22 # Question: should it be here?
@@ -46,6 +50,13 @@ chillers:
     bat_volume_flow_rate_per_prcnt: 0.00666 # 400/60000.0 # internal units are always m3/s
     pcs_volume_flow_rate_per_prcnt: 0.00200   # 120/60000.0 # internal units are always m3/s
 
+  envicool_q2_55kw_c/2:
+    chiller_curves_dir: data/chiller_performance/quantum_2p0
+    battery_sensitivity: 3.0
+
+    pump_aux_cap: 0.93
+    comp_aux_cap: 0.93
+    cooling_power_coef: 1
 
 containers:
   quantum_1p0:

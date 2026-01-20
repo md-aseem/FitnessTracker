@@ -22,8 +22,8 @@ class Simulation:
     BATTERY_COOL_EXIT = 299.15 # 26 C
     B_COOLANT_TARGET = 293.15 # 20 C
     
-    BATTERY_HEAT_MIN = 283.15 # 10 C
-    BATTERY_HEAT_TARGET = 298.15 # 25 C
+    BATTERY_HEAT_MIN = 288.15 # 15 C
+    BATTERY_HEAT_TARGET = 291.15 # 18 C
     BATTERY_HEAT_MAX = 303.15 # 30 C
     BATTERY_HEAT_EXIT = 301.15 # 28 C
     
@@ -112,6 +112,9 @@ class Simulation:
         # Power Consumption
         self.total_aux_power = np.zeros([self.n])
 
+        # Internal Heat States
+        self.heat_into_cold_plate = np.zeros([self.n])
+
     def generate_heat_gen_interpolator(self):
         df = self.system_specs.battery_specs.heat_gen_df
         # heat_gen_df format: cols 1..N are C-rates, col 0 is SOC
@@ -127,6 +130,26 @@ class Simulation:
             bounds_error=False,
             fill_value=None
         )
+
+    def get_chiller_cooling_power(self, ambient_temp, curve_temp_c):
+        """
+        Interpolate cooling power from chiller curves.
+        curve_temp_c: 18 or 23
+        """
+        df = self.system_specs.chiller_specs.chiller_curves_df
+        if df.empty:
+            return 0.0
+            
+        # Filter by curve temp (18 or 23)
+        # The builder creates a column 'temp' with these values
+        curve_df = df[df['temp'] == curve_temp_c]
+        
+        if curve_df.empty:
+            return 0.0
+            
+        # Interpolate
+        # Assuming columns are: ambient_temp_C, cooling_power_W, aux_power_W
+        return np.interp(ambient_temp, curve_df['ambient_temp_C'], curve_df['cooling_power_W'])
 
     def run(self):
         print(f"Running simulation...")
@@ -257,6 +280,7 @@ class Simulation:
         # Heat into Chiller (for next step calculation of chiller return temp)
         # b->heatIntoColdPlate = -0.4*maxEnthalpyDelta;
         heat_into_cold_plate = -0.4 * max_possible_heat_transfer
+        self.heat_into_cold_plate[i] = heat_into_cold_plate
         
         # Calculate Temp Entering Chiller (for next step control logic)
         # c->batteryStream->tempEnteringChiller = c->batteryStream->tlcLast - b->heatIntoColdPlate/(c->batteryStream->massFlowRate*c->batteryStream->coolantCp);
@@ -332,10 +356,22 @@ class Simulation:
 
     def update_control_state(self, i):
         # Check for circulation pump triggers (equivalent to setPumpCirculation in C)
-        # For now, simplistic approach or skipping explicit separate function if simple
-        # TODO: fix this
-        # C Check: setPumpCirculation(simmain). checks if we need to circulate.
         
+        # 1. Check if circulation timer is active
+        if self.circ_run_timer < self.CIRCULATION_TIME_LIMIT:
+             self.circ_run_timer += self.dt
+             
+             # Force circulation settings
+             self.compressor_pcnt[i] = 0.0
+             self.compressor_on_off = self.OFF
+             self.battery_pump_pcnt[i] = 0.40
+             self.b_turned_on = False
+             self.fan_pcnt[i] = 0.0
+             
+             # In C, it returns 1 (true) to skip the rest of control logic
+             return
+
+        # Regular Control Logic
         bat_min_temp = np.min(self.battery_temp[i-1])
         bat_max_temp = np.max(self.battery_temp[i-1])
         tlc_last = self.battery_stream_temp_leaving_chiller[i-1]
@@ -365,6 +401,8 @@ class Simulation:
         # Control Scheme 2: Envicool Base Control Scheme
         # bDemand = (b->temperature[6] - (BATTERY_COOL_MIN + ONE)) / bSensitivity;
         sensitivity = self.system_specs.chiller_specs.battery_sensitivity
+        pump_aux_cap = self.system_specs.chiller_specs.pump_aux_cap
+        cooling_power_coef = self.system_specs.chiller_specs.cooling_power_coef
 
         # Check top node temp (index 6)
         b_temp_top = self.battery_temp[i-1, 6]
@@ -373,16 +411,15 @@ class Simulation:
         # Compressor Control
         # if((bDemand >= 0.30) && (c->bTurnedOn == NO))
         if b_demand >= 0.30 and not self.b_turned_on:
-             self.compressor_pcnt[i] = np.clip(b_demand, 1, 3)
-             # self.compressor_pcnt[i] *= coolingPowerCoeff # Assume 1.0 for now
+             self.compressor_pcnt[i] = np.clip(b_demand*cooling_power_coef, 1, 3)
              self.compressor_on_off = self.ON
-             self.battery_pump_pcnt[i] = 0.25 # BATTERY_FLOW_0P25 * pumpAuxCap ?? Using 0.25 for now
+             self.battery_pump_pcnt[i] = pump_aux_cap
              self.b_turned_on = True
              
         elif b_demand >= 0.01 and self.b_turned_on:
-             self.compressor_pcnt[i] = np.clip(b_demand, 1, 3)
+             self.compressor_pcnt[i] = np.clip(b_demand*cooling_power_coef, 1, 3)
              self.compressor_on_off = self.ON
-             self.battery_pump_pcnt[i] = 0.25
+             self.battery_pump_pcnt[i] = pump_aux_cap
              
         elif b_demand < 0.01 and self.b_turned_on:
              self.compressor_pcnt[i] = 0.0
@@ -407,14 +444,8 @@ class Simulation:
         # Leave Cooling Mode Check
         tec_last = self.battery_stream_temp_entering_chiller[i-1]
         
-        if tec_last < (self.B_COOLANT_TARGET - 2.0):
+        if tec_last < (self.B_COOLANT_TARGET - 3.0):
              self.standby_or_circulate(i)
-             self.chiller_mode = self.STANDBY_MODE
-             self.compressor_pcnt[i] = 0.0
-             self.compressor_on_off = self.OFF
-             self.battery_pump_pcnt[i] = 0.01
-             self.b_turned_on = False
-             self.fan_pcnt[i] = 0.0
 
     def heating_mode(self, i):
         self.chiller_mode = self.HEAT_MODE
@@ -427,12 +458,6 @@ class Simulation:
         if bat_max_temp > self.BATTERY_HEAT_MAX or \
            bat_min_temp > self.BATTERY_HEAT_EXIT:
                self.standby_or_circulate(i)
-               self.chiller_mode = self.STANDBY_MODE
-               self.heater_pcnt[i] = 0.0
-               self.compressor_pcnt[i] = 0.0
-               self.compressor_on_off = self.OFF
-               self.battery_pump_pcnt[i] = 0.01
-               self.b_turned_on = False
 
     def circulate_mode(self, i):
         self.compressor_pcnt[i] = 0.0
@@ -472,15 +497,43 @@ class Simulation:
         # I'll approximate: If compressor is ON, cold plate gets cold.
         # If OFF, it drifts to ambient?
 
-        # TODO: fix this
-        # For now, let's keep it simple as I don't have the full chiller model code ported.
-        # Assuming battery_cold_side_temp drops when compressor is on.
+        # 1. Update Chiller Cold Side Temperature
+        # Implements setRefrigeratedLoopColdHXTemperature(simmain) logic
+        
+        # Constants
+        C_COEFF = 1.0
+        BASE_COLD_SIDE_TEMPERATURE = 292.15
+        
         if self.compressor_on_off == self.ON:
-            target = 278.15 # 5 C
-            self.battery_cold_side_temp += (target - self.battery_cold_side_temp) * 0.1 # Exponential approach
+            ambient = self.ambient_temp_profile[i]
+            
+            c18 = C_COEFF * self.get_chiller_cooling_power(ambient, 18)
+            c23 = C_COEFF * self.get_chiller_cooling_power(ambient, 23)
+            
+            # Heat into cold plate from previous step (negative value usually)
+            hicp_last = self.heat_into_cold_plate[i-1]
+            
+            # Logic from C:
+            # if(-b->hicpLast <= (C_COEFF*tableInterpolateCooling(ambientT,c->cooling18))) 
+            #    c->batteryColdSideTemp += (BASE_COLD_SIDE_TEMPERATURE - c->batteryColdSideTemp)*transientDt/(1.0*910.0);
+            
+            if -hicp_last <= c18:
+                 target = BASE_COLD_SIDE_TEMPERATURE
+                 self.battery_cold_side_temp += (target - self.battery_cold_side_temp) * self.dt / (1.0 * 910.0)
+            else:
+                 # c->batteryColdSideTemp += ((BASE_COLD_SIDE_TEMPERATURE + (-b->hicpLast - c18)*5.0/(c23-c18)) - c->batteryColdSideTemp)*transientDt/(1.0*910.0);
+                 if abs(c23 - c18) < 1e-6: # Avoid div by zero
+                     denom = 1.0
+                 else:
+                     denom = c23 - c18
+                     
+                 target = BASE_COLD_SIDE_TEMPERATURE + (-hicp_last - c18) * 5.0 / denom
+                 self.battery_cold_side_temp += (target - self.battery_cold_side_temp) * self.dt / (1.0 * 910.0)
+                 
         else:
-            # Drift to ambient
-            self.battery_cold_side_temp += (self.ambient_temp_profile[i] - self.battery_cold_side_temp) * 0.05
+            # If off, set to temp entering chiller (from C: c->batteryColdSideTemp = c->batteryStream->tempEnteringChiller;)
+            # Or simplified drift? The C code explicitly sets it to entering temp when off.
+            self.battery_cold_side_temp = self.battery_stream_temp_entering_chiller[i-1]
             
         # 2. Battery Coolant Stream Calculation
         # maxEnthalpyDelta = m * cp * (T_cold_side - T_entering_last)
