@@ -362,11 +362,7 @@ class Simulation:
              self.circ_run_timer += self.dt
              
              # Force circulation settings
-             self.compressor_pcnt[i] = 0.0
-             self.compressor_on_off = self.OFF
-             self.battery_pump_pcnt[i] = 0.40
-             self.b_turned_on = False
-             self.fan_pcnt[i] = 0.0
+             self._set_circulate_values(i)
              
              # In C, it returns 1 (true) to skip the rest of control logic
              return
@@ -460,13 +456,15 @@ class Simulation:
                self.standby_or_circulate(i)
 
     def circulate_mode(self, i):
+        self._set_circulate_values(i)
+        self.standby_or_circulate(i)
+
+    def _set_circulate_values(self, i):
         self.compressor_pcnt[i] = 0.0
         self.compressor_on_off = self.OFF
         self.battery_pump_pcnt[i] = 0.40
         self.b_turned_on = False
         self.fan_pcnt[i] = 0.0
-        
-        self.standby_or_circulate(i)
 
     def standby_mode(self, i):
         self.compressor_pcnt[i] = 0.0
