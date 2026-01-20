@@ -25,7 +25,20 @@ def build_battery_specs(input_config: InputConfig,
         battery_type=battery_type,
         battery_life=battery_life,
         ocv_df=ocv_df,
-        heat_gen_df=heat_gen_df
+        heat_gen_df=heat_gen_df,
+        mass=25600.0, # 80.0 modules * 320.0 mass per module?
+        cp=990.0,
+        k=9.0, # top to bottom conductivity?
+        area=80.0,
+        thickness=0.204,
+        topUA=15.0, # how?
+        coldPlateUA=666.67, # 20000.0 / 30.0 how?
+        initial_temperature=input_config.initial_battery_temp,
+        initial_soc=input_config.initial_soc,
+        total_energy=(3.47*52.0)*(304.0*80.0), # from C model
+        n_series=52,
+        n_parallel=80,
+        cell_capacity=304.0
     )
 
     return battery_specs

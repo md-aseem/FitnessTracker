@@ -44,6 +44,32 @@ class BatterySpecs:
     # Thermal data
     heat_gen_df: pd.DataFrame
 
+    # Thermal Properties
+    mass: float
+    cp: float
+    k: float
+    area: float
+    thickness: float
+    topUA: float
+    coldPlateUA: float
+    initial_temperature: float
+    initial_soc: float
+    total_energy: float
+    n_series: int
+    n_parallel: int
+    cell_capacity: float
+
+    dx: float = field(init=False)
+    R: np.ndarray = field(init=False)
+
+    def __post_init__(self):
+        self.dx = self.thickness / 7
+        self.R = np.array([
+            self.area * (1 / ((1 / self.coldPlateUA) + ((self.dx / 2) / self.k))),
+            self.area * self.k / self.dx,
+            self.area * (1 / ((1 / self.topUA) + ((self.dx / 2) / self.k)))
+        ])
+
 @dataclass
 class ChillerSpecs:
     chiller_model: str
