@@ -5,6 +5,7 @@ from python_model.preprocess.builders.system import build_system_specs
 import numpy as np
 from scipy.interpolate import RegularGridInterpolator
 from tqdm import tqdm
+import matplotlib.pyplot as plt
 
 class Simulation:
     # Control Constants
@@ -71,6 +72,7 @@ class Simulation:
         
         # --- Control State Initialization ---
         self.chiller_mode = self.STANDBY_MODE
+        self.chiller_mode_history = np.zeros([self.n])
         self.came_from_standby = False
         self.circ_run_timer = 0.0
         
@@ -185,6 +187,7 @@ class Simulation:
             
             # Control Logic Updates
             self.update_control_state(i)
+            self.chiller_mode_history[i] = self.chiller_mode
             self.update_chiller_condition_and_cool(i)
             self.update_hvac_condition_and_cool(i)
             self.update_dehumidifier_condition_and_dry_out(i)
@@ -193,7 +196,10 @@ class Simulation:
             self.update_battery_temp(i)
             
             # Post-Step Calculations
-            self.tabulate_aux_energy(i)
+            # self.tabulate_aux_energy(i) # Moved to post-simulation
+            
+        # Post-Simulation Metrics
+        self.calculate_metrics()
 
 
 
@@ -222,13 +228,17 @@ class Simulation:
         self.steel_walls_temp[i, 6] = (self.steel_walls_temp[i - 1, 6] + steel_flux_to_outer_node * self.dt /
                                        (self.steel_wall_specs.mass * self.steel_wall_specs.cp / 7))
 
-        for j in range(1, 6):
-            self.steel_walls_temp[i, j] = (self.steel_walls_temp[i - 1, j] + (
-                    (self.steel_walls_temp[i - 1, j - 1] - self.steel_walls_temp[i - 1, j]) * self.steel_wall_specs.R[
-                1] +
-                    (self.steel_walls_temp[i - 1, j + 1] - self.steel_walls_temp[i - 1, j]) * self.steel_wall_specs.R[
-                        1]) *
-                                           (self.dt / (self.steel_wall_specs.mass * self.steel_wall_specs.cp / 7)))
+        # Vectorized Update for nodes 1-5
+        # T[j] = T_prev[j] + ( (T_prev[j-1] - T_prev[j])*R + (T_prev[j+1] - T_prev[j])*R ) * dt / (mass * cp / 7)
+        # Flux left: (T_prev[0:5] - T_prev[1:6])
+        # Flux right: (T_prev[2:7] - T_prev[1:6])
+        t_prev_steel = self.steel_walls_temp[i - 1]
+        
+        flux_left = (t_prev_steel[0:5] - t_prev_steel[1:6]) * self.steel_wall_specs.R[1]
+        flux_right = (t_prev_steel[2:7] - t_prev_steel[1:6]) * self.steel_wall_specs.R[1]
+        
+        self.steel_walls_temp[i, 1:6] = t_prev_steel[1:6] + (flux_left + flux_right) * self.dt / \
+                                        (self.steel_wall_specs.mass * self.steel_wall_specs.cp / 7)
 
         # Insulation Wall Update
         insulation_flux_to_outer_node = (((self.ambient_temp_profile[i] - self.insulation_walls_temp[i, 6]) *
@@ -253,13 +263,14 @@ class Simulation:
                     self.insulation_walls_temp[i - 1, 6] + insulation_flux_to_outer_node * self.dt /
                     (self.insulation_wall_specs.mass * self.insulation_wall_specs.cp / 7))
 
-        for j in range(1, 6):
-            self.insulation_walls_temp[i, j] = (self.insulation_walls_temp[i - 1, j] + (
-                    (self.insulation_walls_temp[i - 1, j - 1] - self.insulation_walls_temp[i - 1, j]) *
-                    self.insulation_wall_specs.R[1] +
-                    (self.insulation_walls_temp[i - 1, j + 1] - self.insulation_walls_temp[i - 1, j]) *
-                    self.insulation_wall_specs.R[1]) *
-                    (self.dt / (self.insulation_wall_specs.mass * self.insulation_wall_specs.cp / 7)))
+        # Vectorized Update for nodes 1-5
+        t_prev_ins = self.insulation_walls_temp[i - 1]
+        
+        flux_left = (t_prev_ins[0:5] - t_prev_ins[1:6]) * self.insulation_wall_specs.R[1]
+        flux_right = (t_prev_ins[2:7] - t_prev_ins[1:6]) * self.insulation_wall_specs.R[1]
+        
+        self.insulation_walls_temp[i, 1:6] = t_prev_ins[1:6] + (flux_left + flux_right) * self.dt / \
+                                             (self.insulation_wall_specs.mass * self.insulation_wall_specs.cp / 7)
 
         # Internal Air Temperature Update
         heat_into_air_from_battery = 0.0  # Placeholder as battery model is not connected yet
@@ -328,16 +339,15 @@ class Simulation:
                                   (top_q + (1.0/7.0) * total_heat_gen + battery_tab_heat) * self.dt / \
                                   (b_specs.mass * b_specs.cp / 7.0)
 
-        # Middle Nodes (1-5)
-        for j in range(1, 6):
-            # b->temperature[i] += (((ONE/7.0)*batteryTotalHeatGeneration(simmain)) 
-            #                   +  (b->tempLast[i-1] - b->tempLast[i])*R[1]
-            #                   +  (b->tempLast[i+1] - b->tempLast[i])*R[1])*transientDt/(b->mass * b->cp / 7.0);
-            self.battery_temp[i, j] = self.battery_temp[i-1, j] + \
-                                      ((1.0/7.0 * total_heat_gen) + \
-                                       (self.battery_temp[i-1, j-1] - self.battery_temp[i-1, j]) * b_specs.R[1] + \
-                                       (self.battery_temp[i-1, j+1] - self.battery_temp[i-1, j]) * b_specs.R[1]) * \
-                                      self.dt / (b_specs.mass * b_specs.cp / 7.0)
+        # Middle Nodes (1-5) Vectorized
+        t_prev_batt = self.battery_temp[i-1]
+        
+        flux_left = (t_prev_batt[0:5] - t_prev_batt[1:6]) * b_specs.R[1]
+        flux_right = (t_prev_batt[2:7] - t_prev_batt[1:6]) * b_specs.R[1]
+        
+        self.battery_temp[i, 1:6] = t_prev_batt[1:6] + \
+                                    ((1.0/7.0 * total_heat_gen) + flux_left + flux_right) * \
+                                    self.dt / (b_specs.mass * b_specs.cp / 7.0)
 
 
     def update_soc(self, i):
@@ -641,77 +651,119 @@ class Simulation:
         else:
              self.dehumidifier_aux_power[i] = 0.0
 
-    def tabulate_aux_energy(self, i):
-        # Accumulate component energies (Power * dt) -> Convert to kWh later or keep in Joules/Watt-seconds?
-        # C code accumulates Power * dt (Joules).
+    def calculate_metrics(self):
+        # Optimized metric calculation using numpy
         
-        # Current Aug Power components
-        # We need individual components for categorization
+        # 1. Reconstruct component powers (vectorized)
+        # Note: self.compressor_pcnt, etc. are full arrays
+        comp_power = self.compressor_pcnt * 5000.0
+        pump_power = self.battery_pump_pcnt * 500.0
+        fan_power = self.fan_pcnt * 1000.0
+        elec_power = 100.0 # Constant overhead, but arguably only when system is "active"? 
+                           # In tabulate_aux_energy logic it seemed constant.
+                           # Let's assume it applies at all steps for now or improve logic if needed.
+                           
+        heater_power = self.heater_pcnt * 6000.0
         
-        # Chiller
-        # Defined in update_chiller_condition_and_cool:
-        # c->currentAuxPower = compressor + batPump + pcsPump + fan + electronics + heater
-        # In python simplify we calculated total_aux_power already, but let's break it strictly like C for buckets
-        
-        # Recalculate component powers for bucketing
-        comp_power = self.compressor_pcnt[i] * 5000.0
-        pump_power = self.battery_pump_pcnt[i] * 500.0
-        fan_power = self.fan_pcnt[i] * 1000.0
-        elec_power = 100.0
-        heater_power = self.heater_pcnt[i] * 6000.0
-        
-        # PCS Logic (Approximate)
-        # if chargeOrDischargeIsHappening { currentAuxPower = 100.0; inverterHeat = 18000.0; } 
-        # else { 0.0 }
-        current_sq = self.current_profile[i] ** 2
-        inverter_aux_power = 0.0
-        if current_sq > 0.001:
-             inverter_aux_power = 100.0
+        # PCS Logic
+        # if chargeOrDischargeIsHappening { currentAuxPower = 100.0; }
+        current_sq = self.current_profile ** 2
+        inverter_aux_power = np.where(current_sq > 0.001, 100.0, 0.0)
         
         chiller_current_power = comp_power + pump_power + fan_power + elec_power + heater_power
         
-        hvac_current_power = self.hvac_aux_power[i]
-        dehumidifier_current_power = self.dehumidifier_aux_power[i]
-        aux_load_current_power = 0.0 # Placeholder
+        hvac_current_power = self.hvac_aux_power
+        dehumidifier_current_power = self.dehumidifier_aux_power
+        aux_load_current_power = np.zeros_like(self.time_s) # Placeholder from original
         
         total_instant_power = chiller_current_power + hvac_current_power + dehumidifier_current_power + \
                               inverter_aux_power + aux_load_current_power
                               
-        # Update General Accumulators
-        self.chiller_aux_energy += chiller_current_power * self.dt
-        self.hvac_aux_energy += hvac_current_power * self.dt
-        self.dehumidifier_aux_energy += dehumidifier_current_power * self.dt
-        self.inverter_aux_energy += inverter_aux_power * self.dt
-        self.aux_load_energy += aux_load_current_power * self.dt
+        self.total_aux_power = total_instant_power # Store array
         
-        self.total_aux_power[i] = total_instant_power # Update the array for plotting
+        # Accumulate component energies (Total sum)
+        # Using Simpson's rule or Trapezoidal would be better for variable steps, but dt is const here.
+        # Simple sum * dt matches original logic.
+        self.chiller_aux_energy = np.sum(chiller_current_power) * self.dt
+        self.hvac_aux_energy = np.sum(hvac_current_power) * self.dt
+        self.dehumidifier_aux_energy = np.sum(dehumidifier_current_power) * self.dt
+        self.inverter_aux_energy = np.sum(inverter_aux_power) * self.dt
+        self.aux_load_energy = np.sum(aux_load_current_power) * self.dt
         
         # Bucketing Logic
-        # 1. OPERATING - when current is flowing (C: currentCurrent*currentCurrent > 0.001)
-        # 2. RESTING   - when off and bat temp > cutoff
-        # 3. IDLING    - when off and bat temp < cutoff
+        # 1. OPERATING
+        is_operating = current_sq > 0.001
+        self.operating_aux_energy = np.sum(total_instant_power[is_operating]) * self.dt
+        self.time_spent_operating = np.sum(is_operating) * self.dt
+        # Note: batt_ave_temp logic was accumulating self.dt * temp. 
+        # So average = sum(temp * dt) / total_time? Or just sum(temp * dt)?
+        # Original: self.batt_ave_temp_operating += bat_temp_top * self.dt
+        # So it is the time-integral of temperature.
+        self.batt_ave_temp_operating = np.sum(self.battery_temp[is_operating, 6]) * self.dt
         
-        bat_temp_top = self.battery_temp[i, 6]
+        # 2. RESTING (Not operating AND temp > cutoff)
+        bat_temp_top = self.battery_temp[:, 6]
+        is_resting = (~is_operating) & (bat_temp_top > self.idle_rest_cutoff_temp)
         
-        if current_sq > 0.001:
-             self.operating_aux_energy += total_instant_power * self.dt
-             self.batt_ave_temp_operating += bat_temp_top * self.dt
-             self.time_spent_operating += self.dt
-             
-        elif bat_temp_top > self.idle_rest_cutoff_temp:
-             self.resting_aux_energy += total_instant_power * self.dt
-             self.batt_ave_temp_not_operating += bat_temp_top * self.dt
-             self.time_spent_resting += self.dt
-             
-        else:
-             self.idling_aux_energy += total_instant_power * self.dt
-             self.batt_ave_temp_not_operating += bat_temp_top * self.dt
-             self.time_spent_idling += self.dt
+        self.resting_aux_energy = np.sum(total_instant_power[is_resting]) * self.dt
+        self.time_spent_resting = np.sum(is_resting) * self.dt
+        self.batt_ave_temp_not_operating += np.sum(bat_temp_top[is_resting]) * self.dt
+        
+        # 3. IDLING (Not operating AND temp <= cutoff)
+        is_idling = (~is_operating) & (~is_resting) # Remaining
+        
+        self.idling_aux_energy = np.sum(total_instant_power[is_idling]) * self.dt
+        self.time_spent_idling = np.sum(is_idling) * self.dt
+        self.batt_ave_temp_not_operating += np.sum(bat_temp_top[is_idling]) * self.dt
 
 
+    def plot_results(self):
+        time_hours = self.time_s / 3600.0
+        
+        fig, axs = plt.subplots(4, 1, figsize=(12, 16), sharex=True)
+        
+        # 1. Temperatures
+        axs[0].plot(time_hours, self.battery_temp[:, 6] - 273.15, label='Battery Top Temp')
+        axs[0].plot(time_hours, self.battery_temp[:, 0] - 273.15, label='Battery Bottom Temp', linestyle='--')
+        axs[0].plot(time_hours, self.ambient_temp_profile - 273.15, label='Ambient Temp', alpha=0.6)
+        axs[0].set_ylabel('Temperature (°C)')
+        axs[0].set_title('System Temperatures')
+        axs[0].legend()
+        axs[0].grid(True)
+        
+        # 2. Electrical (Current & SOC)
+        ax2 = axs[1]
+        ax2.plot(time_hours, self.current_profile, label='Current (A)', color='blue')
+        ax2.set_ylabel('Current (A)', color='blue')
+        ax2.grid(True)
+        
+        ax2_right = ax2.twinx()
+        ax2_right.plot(time_hours, self.soc * 100.0, label='SOC (%)', color='green')
+        ax2_right.set_ylabel('SOC (%)', color='green')
+        axs[1].set_title('Electrical Stats')
+        
+        # 3. Aux Power
+        axs[2].plot(time_hours, self.total_aux_power, label='Total Aux Power', color='red')
+        axs[2].set_ylabel('Power (W)')
+        axs[2].set_title('Auxiliary Power Consumption')
+        axs[2].legend()
+        axs[2].grid(True)
+        
+        # 4. Chiller State
+        axs[3].plot(time_hours, self.chiller_mode_history, label='Chiller Mode', drawstyle='steps-post')
+        axs[3].set_yticks([0, 1, 2, 3])
+        axs[3].set_yticklabels(['Standby', 'Cool', 'Heat', 'Circulate'])
+        axs[3].set_ylabel('Mode')
+        axs[3].set_xlabel('Time (Hours)')
+        axs[3].set_title('Thermal Management State')
+        axs[3].grid(True)
+        
+        plt.tight_layout()
+        plt.show()
 
 if __name__ == "__main__":
     system_specs = build_system_specs()
     operational_specs = load_operation_specs()
     sim = Simulation(system_specs, operational_specs)
     sim.run()
+    sim.plot_results()
