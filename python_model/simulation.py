@@ -759,7 +759,9 @@ class Simulation:
         axs[3].grid(True)
         
         plt.tight_layout()
-        plt.show()
+        plt.savefig('simulation_results.png')
+        print("Plot saved to simulation_results.png")
+        # plt.show() # Commented out to prevent blocking in headless env, uncomment to see plot
 
 if __name__ == "__main__":
     system_specs = build_system_specs()
