@@ -6,13 +6,10 @@ def generate_current_profile_for_a_day(c_rate: float,
                              rest_between_cycles: float = 2,
                              start_with_rest: bool = True,
                              start_with_charge: bool = True,
-                             starting_time: int = 4 # 24 hour timezone
+                             starting_time: int = 4, # 24 hour timezone
+                             dt: float = 1.0 
                              ) -> tuple[np.ndarray, np.ndarray]:
 
-
-    dt = 1.0  # seconds
-    
-    # 24 hours in seconds (0 to 86400 inclusive requires 86401 points)
     SECONDS_IN_DAY = 86400
     total_steps = int(SECONDS_IN_DAY / dt) + 1
     

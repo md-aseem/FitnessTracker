@@ -4,6 +4,7 @@ from python_model.preprocess.properties import SystemSpecs, OperationalSpecs
 from python_model.preprocess.builders.system import build_system_specs
 import numpy as np
 from scipy.interpolate import RegularGridInterpolator
+from tqdm import tqdm
 
 class Simulation:
     # Control Constants
@@ -115,6 +116,26 @@ class Simulation:
         # Internal Heat States
         self.heat_into_cold_plate = np.zeros([self.n])
 
+        # Energy Aggregation
+        self.operating_aux_energy = 0.0
+        self.resting_aux_energy = 0.0
+        self.idling_aux_energy = 0.0
+        self.time_spent_operating = 0.0
+        self.time_spent_resting = 0.0
+        self.time_spent_idling = 0.0
+
+        self.chiller_aux_energy = 0.0
+        self.hvac_aux_energy = 0.0
+        self.dehumidifier_aux_energy = 0.0
+        self.inverter_aux_energy = 0.0
+        self.aux_load_energy = 0.0
+        
+        self.batt_ave_temp_operating = 0.0
+        self.batt_ave_temp_not_operating = 0.0
+        
+        self.idle_rest_cutoff_temp = 298.15 # 25 C approximate from C
+
+
     def generate_heat_gen_interpolator(self):
         df = self.system_specs.battery_specs.heat_gen_df
         # heat_gen_df format: cols 1..N are C-rates, col 0 is SOC
@@ -151,12 +172,13 @@ class Simulation:
         # Assuming columns are: ambient_temp_C, cooling_power_W, aux_power_W
         return np.interp(ambient_temp, curve_df['ambient_temp_C'], curve_df['cooling_power_W'])
 
-    def run(self):
+    def run(self, steps: int = None):
         print(f"Running simulation...")
 
 
         # Main time-stepping loop
-        for i in range(1, self.time_s.size):
+        limit = self.time_s.size if steps is None else min(steps, self.time_s.size)
+        for i in tqdm(range(1, limit)):
 
             ### Calculating internal air temp and walls temp
             self.calculate_ambient_heat_load_and_internal_air_temp(i)
@@ -169,6 +191,10 @@ class Simulation:
             
             self.update_soc(i)
             self.update_battery_temp(i)
+            
+            # Post-Step Calculations
+            self.tabulate_aux_energy(i)
+
 
 
     def calculate_ambient_heat_load_and_internal_air_temp(self, i):
@@ -406,14 +432,16 @@ class Simulation:
         
         # Compressor Control
         # if((bDemand >= 0.30) && (c->bTurnedOn == NO))
+        # Logic from C: c->compressorPcnt  = (bDemand > ONE) ? ONE : ((bDemand < 0.30) ? 0.30 : bDemand);
+        
         if b_demand >= 0.30 and not self.b_turned_on:
-             self.compressor_pcnt[i] = np.clip(b_demand*cooling_power_coef, 1, 3)
+             self.compressor_pcnt[i] = np.clip(b_demand, 0.30, 1.0) * cooling_power_coef
              self.compressor_on_off = self.ON
              self.battery_pump_pcnt[i] = pump_aux_cap
              self.b_turned_on = True
              
         elif b_demand >= 0.01 and self.b_turned_on:
-             self.compressor_pcnt[i] = np.clip(b_demand*cooling_power_coef, 1, 3)
+             self.compressor_pcnt[i] = np.clip(b_demand, 0.30, 1.0) * cooling_power_coef
              self.compressor_on_off = self.ON
              self.battery_pump_pcnt[i] = pump_aux_cap
              
@@ -558,16 +586,7 @@ class Simulation:
         self.battery_stream_temp_leaving_chiller[i] = tec_last + \
             (heater_heat + 0.7 * max_enthalpy_delta) / (self.battery_stream_mass_flow * coolant_cp)
 
-        # Update Aux Power
-        # compressorAuxPower(simmain) + pump + fan + electronics
-        # Approximating
-        comp_power = self.compressor_pcnt[i] * 5000.0 # 5 kW max?
-        pump_power = self.battery_pump_pcnt[i] * 500.0
-        fan_power = self.fan_pcnt[i] * 1000.0
-        elec_power = 100.0
-        heater_power = self.heater_pcnt[i] * 6000.0 # Efficiency?
-        
-        self.total_aux_power[i] = comp_power + pump_power + fan_power + elec_power + heater_power
+
 
 
     def update_hvac_condition_and_cool(self, i):
@@ -621,6 +640,74 @@ class Simulation:
              self.dehumidifier_on_time += self.dt
         else:
              self.dehumidifier_aux_power[i] = 0.0
+
+    def tabulate_aux_energy(self, i):
+        # Accumulate component energies (Power * dt) -> Convert to kWh later or keep in Joules/Watt-seconds?
+        # C code accumulates Power * dt (Joules).
+        
+        # Current Aug Power components
+        # We need individual components for categorization
+        
+        # Chiller
+        # Defined in update_chiller_condition_and_cool:
+        # c->currentAuxPower = compressor + batPump + pcsPump + fan + electronics + heater
+        # In python simplify we calculated total_aux_power already, but let's break it strictly like C for buckets
+        
+        # Recalculate component powers for bucketing
+        comp_power = self.compressor_pcnt[i] * 5000.0
+        pump_power = self.battery_pump_pcnt[i] * 500.0
+        fan_power = self.fan_pcnt[i] * 1000.0
+        elec_power = 100.0
+        heater_power = self.heater_pcnt[i] * 6000.0
+        
+        # PCS Logic (Approximate)
+        # if chargeOrDischargeIsHappening { currentAuxPower = 100.0; inverterHeat = 18000.0; } 
+        # else { 0.0 }
+        current_sq = self.current_profile[i] ** 2
+        inverter_aux_power = 0.0
+        if current_sq > 0.001:
+             inverter_aux_power = 100.0
+        
+        chiller_current_power = comp_power + pump_power + fan_power + elec_power + heater_power
+        
+        hvac_current_power = self.hvac_aux_power[i]
+        dehumidifier_current_power = self.dehumidifier_aux_power[i]
+        aux_load_current_power = 0.0 # Placeholder
+        
+        total_instant_power = chiller_current_power + hvac_current_power + dehumidifier_current_power + \
+                              inverter_aux_power + aux_load_current_power
+                              
+        # Update General Accumulators
+        self.chiller_aux_energy += chiller_current_power * self.dt
+        self.hvac_aux_energy += hvac_current_power * self.dt
+        self.dehumidifier_aux_energy += dehumidifier_current_power * self.dt
+        self.inverter_aux_energy += inverter_aux_power * self.dt
+        self.aux_load_energy += aux_load_current_power * self.dt
+        
+        self.total_aux_power[i] = total_instant_power # Update the array for plotting
+        
+        # Bucketing Logic
+        # 1. OPERATING - when current is flowing (C: currentCurrent*currentCurrent > 0.001)
+        # 2. RESTING   - when off and bat temp > cutoff
+        # 3. IDLING    - when off and bat temp < cutoff
+        
+        bat_temp_top = self.battery_temp[i, 6]
+        
+        if current_sq > 0.001:
+             self.operating_aux_energy += total_instant_power * self.dt
+             self.batt_ave_temp_operating += bat_temp_top * self.dt
+             self.time_spent_operating += self.dt
+             
+        elif bat_temp_top > self.idle_rest_cutoff_temp:
+             self.resting_aux_energy += total_instant_power * self.dt
+             self.batt_ave_temp_not_operating += bat_temp_top * self.dt
+             self.time_spent_resting += self.dt
+             
+        else:
+             self.idling_aux_energy += total_instant_power * self.dt
+             self.batt_ave_temp_not_operating += bat_temp_top * self.dt
+             self.time_spent_idling += self.dt
+
 
 
 if __name__ == "__main__":

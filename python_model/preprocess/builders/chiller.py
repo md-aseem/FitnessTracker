@@ -12,7 +12,7 @@ def build_chiller_specs(input_config: InputConfig, library_data) -> ChillerSpecs
 
     is_envicool = 'envicool_55kW' in chiller_model
     if is_envicool and quantum == '2p0':
-        chiller_curves_dir = library_data['chillers']['envicool_q2_55kw']['chiller_curves_dir']
+        chiller_curves_dir = library_data['chillers']['envicool_q2_55kw_c/4']['chiller_curves_dir']
 
         low_temp = pd.read_csv(Path(__file__).parent.parent.parent / chiller_curves_dir / "envicool_55kw_18c.csv")
         low_temp['temp'] = 18
@@ -25,7 +25,7 @@ def build_chiller_specs(input_config: InputConfig, library_data) -> ChillerSpecs
     else:
         chiller_curves_df = pd.DataFrame()
 
-    chiller_data = library_data['chillers']['envicool_q2_55kw']
+    chiller_data = library_data['chillers']['envicool_q2_55kw_c/4']
 
     return ChillerSpecs(
         chiller_model=chiller_model,
@@ -40,5 +40,8 @@ def build_chiller_specs(input_config: InputConfig, library_data) -> ChillerSpecs
         bat_pump_power_per_prcnt=chiller_data['bat_pump_power_per_prcnt'],
         fan_aux_power_per_pcnt=chiller_data['fan_aux_power_per_pcnt'],
         bat_volume_flow_rate_per_prcnt=chiller_data['bat_volume_flow_rate_per_prcnt'],
-        pcs_volume_flow_rate_per_prcnt=chiller_data['pcs_volume_flow_rate_per_prcnt']
+        pcs_volume_flow_rate_per_prcnt=chiller_data['pcs_volume_flow_rate_per_prcnt'],
+        pump_aux_cap=chiller_data['pump_aux_cap'],
+        comp_aux_cap=chiller_data['comp_aux_cap'],
+        cooling_power_coef=chiller_data['cooling_power_coef'],
     )

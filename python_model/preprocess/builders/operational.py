@@ -10,14 +10,17 @@ def load_operation_specs() -> OperationalSpecs:
     c_rate = input_config.c_rate
     n_cycles = input_config.n_cycles
     capacity_ah = library_data['batteries'][input_config.battery_type]['capacity_ah']
+    dt = 0.2
+
     time_s, current_profile = generate_current_profile_for_a_day(c_rate=c_rate,
                                                                  n_cycles=n_cycles,
                                                                  capacity_ah=capacity_ah,
+                                                                 dt=dt
                                                                  )
 
-    ambient_temp_constant = input_config.ambient_temperature
-    time_s, ambient_profile = generate_ambient_temp_profile_for_a_day(ambient_temp_constant)
-    time_s, radiation_profile = generate_radiation_load_for_a_day()
+    ambient_temp_constant = input_config.ambient_temperature + 273.15
+    time_s, ambient_profile = generate_ambient_temp_profile_for_a_day(ambient_temp_constant, dt=dt)
+    time_s, radiation_profile = generate_radiation_load_for_a_day(dt=dt)
 
     return OperationalSpecs(time_s=time_s,
                             current_profile=current_profile,
