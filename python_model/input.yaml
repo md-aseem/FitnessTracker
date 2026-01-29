@@ -11,7 +11,6 @@ chiller_model: envicool_55kW_c/2 # envicool_55kW_c/4  or envicool_55kW_c/2   or
                                  # bergstrom_55kW_c/4 or bergstrom_55kW_c/2
 
 chiller_noise_kit: False         # True/False
-initial_soc: 0.99
 
 sunrise_time: 7
 sunset_time: 19

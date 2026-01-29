@@ -1,14 +1,14 @@
 import numpy as np
 
-def generate_power_profile_for_a_day(cp_rate: float,
-                             n_cycles: int,
-                             total_energy: float,
-                             rest_between_cycles: float = 2,
-                             start_with_rest: bool = True,
-                             start_with_charge: bool = True,
-                             starting_time: int = 4, # 24 hour timezone
-                             dt: float = 1.0 
-                             ) -> tuple[np.ndarray, np.ndarray]:
+def generate_power_profiles_for_a_day(cp_rate: float,
+                                      n_cycles: int,
+                                      total_energy: float,
+                                      rest_between_cycles: float = 2,
+                                      start_with_rest: bool = True,
+                                      start_with_charge: bool = True,
+                                      starting_time: int = 4,  # 24 hour timezone
+                                      dt: float = 1.0
+                                      ):
 
     SECONDS_IN_DAY = 86400
     total_steps = int(SECONDS_IN_DAY / dt) + 1
@@ -54,5 +54,6 @@ def generate_power_profile_for_a_day(cp_rate: float,
         # Determine how much of the sequence fits in the remaining day
         points_to_fill = min(len(sequence), total_steps - start_idx)
         power_watts[start_idx : start_idx + points_to_fill] = sequence[:points_to_fill]
-
-    return time_s, power_watts
+    current = 0#to be filled
+    soc = 0# to be filled
+    return time_s, soc, current, power_watts

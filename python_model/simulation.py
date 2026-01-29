@@ -45,6 +45,8 @@ class Simulation:
         self.n = self.operational_specs.n
         self.dt = self.operational_specs.dt
         self.time_s = self.operational_specs.time_s.copy()
+        self.power_profile = self.operational_specs.power_profile.copy()
+        self.soc = self.operational_specs.soc.copy()
         self.current_profile = self.operational_specs.current_profile.copy()
         self.ambient_temp_profile = self.operational_specs.ambient_profile.copy()
         self.radiation_heat_load = self.calculate_radiation_load()
@@ -72,7 +74,7 @@ class Simulation:
 
         # SOC
         self.soc = np.zeros([self.n])
-        self.soc[0] = self.system_specs.battery_specs.initial_soc
+        self.soc[0] = self.system_specs.battery_specs.soc_init
 
         # Setup Heat Generation Interpolator
         self.heat_gen_interpolator = self.generate_heat_gen_interpolator()
@@ -197,8 +199,7 @@ class Simulation:
             self.update_chiller_condition_and_cool(i)
             self.update_hvac_condition_and_cool(i)
             self.update_dehumidifier_condition_and_dry_out(i)
-            
-            self.update_soc(i)
+
             self.update_battery_temp(i)
             
             # Post-Step Calculations
@@ -365,12 +366,6 @@ class Simulation:
 
 
 
-    def update_soc(self, i):
-        
-        self.soc[i] = np.clip(
-            self.soc[i-1] + self.current_profile[i] * self.dt / (self.system_specs.battery_specs.cell_capacity * 3600.0),
-            0, 1)
-
     def get_ocv(self, soc):
         ocv_df = self.system_specs.battery_specs.ocv_df
         # Assuming index 0 is SOC and index 1 is Voltage
@@ -380,7 +375,7 @@ class Simulation:
         # Interpolate 2D: SOC and C-Rate
         
         current_amps = self.current_profile[i]
-        c_rate = current_amps / self.system_specs.battery_specs.cell_capacity
+        c_rate = current_amps / self.system_specs.battery_specs.cell_capacity_ah
         
         soc = self.soc[i]
         cell_heat = self.heat_gen_interpolator((soc, c_rate))

@@ -22,10 +22,12 @@ class InputConfig(BaseModel):
     battery_life: str
     chiller_model: str
     chiller_noise_kit: bool
-    initial_soc: float
     sunrise_time: int
     sunset_time: int
     control_scheme: str
+
+    # initialization
+    soc_init: float
 
 
 ### module specs
@@ -53,12 +55,12 @@ class BatterySpecs:
     topUA: float
     coldPlateUA: float
     initial_temperature: float
-    initial_soc: float
+    soc_init: float
     total_energy: float
     n_cells_in_a_module: int
     n_modules_in_a_string: int
     n_strings: int
-    cell_capacity: float
+    cell_capacity_ah: float
 
     dx: float = field(init=False)
     R: np.ndarray = field(init=False)
@@ -140,6 +142,8 @@ class ContainerSpecs:
 @dataclass
 class OperationalSpecs:
     time_s: np.ndarray
+    soc_profile: np.ndarray
+    current_profile: np.ndarray
     power_profile: np.ndarray
     ambient_profile: np.ndarray
     radiation_profile: np.ndarray

@@ -34,12 +34,12 @@ def build_battery_specs(input_config: InputConfig,
         topUA=15.0, # how?
         coldPlateUA=666.67, # 20000.0 / 30.0 how?
         initial_temperature=input_config.initial_battery_temp + 273.15,
-        initial_soc=input_config.initial_soc,
+        soc_init=input_config.soc_init,
         total_energy=(3.47*52.0)*(304.0*80.0), # from C model
         n_cells_in_a_module=52,
         n_modules_in_a_string=8,
         n_strings=10,
-        cell_capacity=304.0
+        cell_capacity_ah=library_data['batteries'][input_config.battery_type]['capacity_ah']
     )
 
     return battery_specs

@@ -2,7 +2,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 
-def generate_radiation_load_for_a_day(max_radiation: int = 170, sunrise_time: int = 7, sunset_time: int= 19 , dt: int = 1):
+def generate_radiation_load_for_a_day(max_radiation: int = 170, sunrise_time: int = 7, sunset_time: int= 19 , dt: float = 1):
 
     SECONDS_IN_DAY = 86400
     total_steps = int(SECONDS_IN_DAY / dt) + 1
