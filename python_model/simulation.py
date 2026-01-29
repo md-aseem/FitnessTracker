@@ -611,7 +611,7 @@ class Simulation:
             battery_stream_mass_flow = 0.001
             volume_flow_rate_lpm = 0.1
         else:
-            volume_flow_rate_lpm = self.BAT_VOLUME_FLOW_RATE_LPM * battery_pump_pcnt
+            volume_flow_rate_lpm = self.BAT_VOLUME_FLOW_RATE_LPM * self.battery_pump_pcnt[i]
             battery_stream_mass_flow = (volume_flow_rate_lpm / 60000.0) * 1050.0 # kg/s (~8.4 kg/s max?)
 
         return battery_stream_mass_flow
