@@ -19,6 +19,8 @@ control_scheme: battery_temp_control
 
 
 # initialization
-soc_init: 0.01
+soc_init: 0.99
 soh_init: 1
 battery_temp_init: 20
+
+custom_power_profile_path: python_model/custom_profile.csv

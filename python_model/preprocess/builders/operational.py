@@ -18,7 +18,7 @@ def load_operation_specs() -> OperationalSpecs:
     
     battery_capacity_ah = batt_specs.cell_capacity_ah
     battery_energy = battery_capacity_ah * 3.2 # 3.2 is nominal voltage (Cell Energy)
-    dt = 0.2
+    dt = 0.25
 
     # User requested to always start with charge (StateMachine handles full battery case)
     start_with_charge = True
