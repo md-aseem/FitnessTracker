@@ -11,7 +11,7 @@ class InputConfig(BaseModel):
     quantum: Literal["2p0", "3p0", "2p1"]
 
     ## operational
-    c_rate: float
+    cp_rate: float
     n_cycles: int
 
     ambient_temperature: float
@@ -140,12 +140,12 @@ class ContainerSpecs:
 @dataclass
 class OperationalSpecs:
     time_s: np.ndarray
-    current_profile: np.ndarray
+    power_profile: np.ndarray
     ambient_profile: np.ndarray
     radiation_profile: np.ndarray
 
     def __post_init__(self):
-        self.n = self.current_profile.shape[0]
+        self.n = self.power_profile.shape[0]
         self.dt = np.diff(self.time_s)[0]
 
 

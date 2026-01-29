@@ -1,2 +1,2 @@
-from .current import generate_current_profile_for_a_day
 from .temperature import generate_ambient_temp_profile_for_a_day
+from .power import generate_power_profile_for_a_day

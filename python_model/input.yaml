@@ -1,7 +1,7 @@
 quantum: 2p0
 ambient_temperature: 35
 initial_battery_temp: 20
-c_rate: 0.5
+cp_rate: 0.5
 n_cycles: 2
 max_charge_rate: 0.44
 max_discharge_rate: 0.5

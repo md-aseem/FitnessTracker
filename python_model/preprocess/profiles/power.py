@@ -1,8 +1,8 @@
 import numpy as np
 
-def generate_current_profile_for_a_day(c_rate: float,
+def generate_power_profile_for_a_day(cp_rate: float,
                              n_cycles: int,
-                             capacity_ah: float,
+                             total_energy: float,
                              rest_between_cycles: float = 2,
                              start_with_rest: bool = True,
                              start_with_charge: bool = True,
@@ -15,20 +15,21 @@ def generate_current_profile_for_a_day(c_rate: float,
     
     # Initialize full day arrays
     time_s = np.arange(total_steps) * dt
-    current_a = np.zeros(total_steps)
+    power_watts = np.zeros(total_steps)
 
     # Calculate durations in seconds
-    t_discharge = (1.0 / c_rate) * 3600
-    t_charge = (1.0 / c_rate) * 3600
+    t_discharge = (1.0 / cp_rate) * 3600
+    t_charge = (1.0 / cp_rate) * 3600
     t_rest = rest_between_cycles * 3600
 
-    # Calculate current magnitudes
-    i_discharge = c_rate * capacity_ah
-    i_charge = -c_rate * capacity_ah
+    # Calculate power magnitudes
+    # Power = CP_rate * Total Energy
+    p_discharge = cp_rate * total_energy
+    p_charge = -cp_rate * total_energy
 
     # Generate profile segments
-    seg_discharge = np.full(int(t_discharge / dt), i_discharge)
-    seg_charge = np.full(int(t_charge / dt), i_charge)
+    seg_discharge = np.full(int(t_discharge / dt), p_discharge)
+    seg_charge = np.full(int(t_charge / dt), p_charge)
     seg_rest = np.zeros(int(t_rest / dt))
 
     # Construct one cycle based on start_with_charge preference
@@ -52,6 +53,6 @@ def generate_current_profile_for_a_day(c_rate: float,
     if start_idx < total_steps:
         # Determine how much of the sequence fits in the remaining day
         points_to_fill = min(len(sequence), total_steps - start_idx)
-        current_a[start_idx : start_idx + points_to_fill] = sequence[:points_to_fill]
+        power_watts[start_idx : start_idx + points_to_fill] = sequence[:points_to_fill]
 
-    return time_s, current_a
+    return time_s, power_watts
