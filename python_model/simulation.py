@@ -6,6 +6,7 @@ import numpy as np
 from scipy.interpolate import RegularGridInterpolator
 from tqdm import tqdm
 import matplotlib.pyplot as plt
+import time
 
 class Simulation:
     # Control Constants
@@ -34,6 +35,8 @@ class Simulation:
     
     HEATER_HEAT = 5000.0 # Watts? Checking C code implies this variable exists or is constant
 
+    BAT_VOLUME_FLOW_RATE_LPM = 400.0
+
     def __init__(self, system_specs: SystemSpecs, operational_specs: OperationalSpecs):
         self.system_specs = system_specs
         self.operational_specs = operational_specs
@@ -52,15 +55,19 @@ class Simulation:
 
         # heat and temperature 2D vectors. First dim is time, Second is space/nodes
         # Initialize with initial ambient temperature
-        initial_temp = self.ambient_temp_profile[0]
-        self.steel_walls_temp = np.full([self.n, 7], initial_temp)
-        self.insulation_walls_temp = np.full([self.n, 7], initial_temp)
+        initial_batt_temp = self.system_specs.battery_specs.initial_temperature
+        
+        # Internal Air Temp
+        # Initialize to initial battery temperature (matching C model behavior)
+        self.internal_air_temp = np.ones([self.n]) * initial_batt_temp
 
-        self.internal_air_temp = np.ones([self.n]) * initial_temp # Start with ambient
+        # Wall Initialization (Linear Gradient from Internal to Ambient)
+        initial_ambient = self.ambient_temp_profile[0]
+
+        self.steel_walls_temp = np.ones([self.n, 7]) * initial_ambient
+        self.insulation_walls_temp = np.ones([self.n, 7]) * initial_ambient
 
         # Battery Temp
-        # Initialize with initial battery temperature
-        initial_batt_temp = self.system_specs.battery_specs.initial_temperature
         self.battery_temp = np.full([self.n, 7], initial_batt_temp)
 
         # SOC
@@ -90,14 +97,13 @@ class Simulation:
         self.compressor_on_off = self.OFF
         
         # Liquid Loop States
-        # Initialize with standard values or ambient
-        self.battery_stream_temp_leaving_chiller = np.full([self.n], initial_temp) # Start with ambient
-        self.battery_stream_temp_entering_chiller = np.full([self.n], initial_temp)
-        self.battery_cold_side_temp = initial_temp # Internal variable for chiller
+        self.battery_stream_temp_leaving_chiller = np.full([self.n], initial_batt_temp) # Start with battery temp
+        self.battery_stream_temp_entering_chiller = np.full([self.n], initial_batt_temp)
+        self.battery_cold_side_temp = initial_batt_temp # Internal variable for chiller
         self.battery_stream_mass_flow = 0.0
         
         # HVAC & Dehumidifier
-        self.hvac_air_temp = np.full([self.n], initial_temp) # ACC internal air temp? Or is it same as internal? 
+        self.hvac_air_temp = np.full([self.n], initial_batt_temp) # ACC internal air temp? Or is it same as internal? 
         # In C, Hvac struct has 'airTemp'. The simulation uses 'internalAirTemp'. 
         # The C code updates 'h->airTemp' separately in 'updateHvacConditionAndCool'.
         # But 'updateControlState' checks 'internalAirTemp' usually? 
@@ -177,7 +183,7 @@ class Simulation:
     def run(self, steps: int = None):
         print(f"Running simulation...")
 
-
+        start_time = time.time()
         # Main time-stepping loop
         limit = self.time_s.size if steps is None else min(steps, self.time_s.size)
         for i in tqdm(range(1, limit)):
@@ -200,16 +206,16 @@ class Simulation:
             
         # Post-Simulation Metrics
         self.calculate_metrics()
-
+        print(f"Time taken: {time.time() - start_time}")
 
 
     def calculate_ambient_heat_load_and_internal_air_temp(self, i):
 
         # Steel Wall Update
         steel_flux_to_outer_node = (self.radiation_heat_load[i] +  # heat from radiation
-                                    ((self.ambient_temp_profile[i] - self.steel_walls_temp[i, 6]) *
+                                    ((self.ambient_temp_profile[i] - self.steel_walls_temp[i-1, 6]) *
                                      self.steel_wall_specs.R[0]) +  # heat from ambient
-                                    ((self.steel_walls_temp[i, 5] - self.steel_walls_temp[i, 6]) *
+                                    ((self.steel_walls_temp[i-1, 5] - self.steel_walls_temp[i-1, 6]) *
                                      self.steel_wall_specs.R[1]))  # heat from internal node
 
         steel_flux_to_inner_node = (((self.internal_air_temp[i - 1] - self.steel_walls_temp[i - 1, 0]) *
@@ -241,9 +247,9 @@ class Simulation:
                                         (self.steel_wall_specs.mass * self.steel_wall_specs.cp / 7)
 
         # Insulation Wall Update
-        insulation_flux_to_outer_node = (((self.ambient_temp_profile[i] - self.insulation_walls_temp[i, 6]) *
+        insulation_flux_to_outer_node = (((self.ambient_temp_profile[i] - self.insulation_walls_temp[i-1, 6]) *
                                           self.insulation_wall_specs.R[0]) +
-                                         ((self.insulation_walls_temp[i, 5] - self.insulation_walls_temp[i, 6]) *
+                                         ((self.insulation_walls_temp[i-1, 5] - self.insulation_walls_temp[i-1, 6]) *
                                           self.insulation_wall_specs.R[1]))
 
         insulation_flux_to_inner_node = (((self.internal_air_temp[i - 1] - self.insulation_walls_temp[i - 1, 0]) *
@@ -273,7 +279,15 @@ class Simulation:
                                              (self.insulation_wall_specs.mass * self.insulation_wall_specs.cp / 7)
 
         # Internal Air Temperature Update
-        heat_into_air_from_battery = 0.0  # Placeholder as battery model is not connected yet
+        # heatIntoAir = (prevT_internal - b->tempLast[6])*R[2]; (From C)
+        # Positive if Air > Battery (Heat flows into Battery)
+        # Air Update subtracts this heat.
+        
+        # Using previous battery temp (node 6 is top)
+        # Note: In C code, b->heatIntoAir is calculated in updateBatteryTemperatures (end of loop) using TEMPLAST.
+        # Here we are at start of loop (step i). battery_temp[i-1] corresponds to last step.
+        b_specs = self.system_specs.battery_specs
+        heat_into_air_from_battery = (self.internal_air_temp[i - 1] - self.battery_temp[i - 1, 6]) * b_specs.R[2]
 
         self.internal_air_temp[i] = self.internal_air_temp[i - 1] + (
                 -heat_into_air_from_battery + flux_to_inner_air_from_walls) * self.dt / (20.0 * 1006.0)
@@ -350,11 +364,11 @@ class Simulation:
                                     self.dt / (b_specs.mass * b_specs.cp / 7.0)
 
 
+
     def update_soc(self, i):
-        # b->soc += currentPower*transientDt /(3600.0*b->totalBatteryEnergy);
         
         self.soc[i] = np.clip(
-            self.soc[i-1] + self.current_profile[i] / self.system_specs.battery_specs.cell_capacity,
+            self.soc[i-1] + self.current_profile[i] * self.dt / (self.system_specs.battery_specs.cell_capacity * 3600.0),
             0, 1)
 
     def get_ocv(self, soc):
@@ -577,16 +591,8 @@ class Simulation:
         
         tec_last = self.battery_stream_temp_entering_chiller[i-1]
         
-        # Flow Rate
-        # volume_flow_rate_lpm = 480.0 * self.battery_pump_pcnt[i] # Assuming 480 LPM max
-        # Using simplified calc from update_battery_temp earlier
-        volume_flow_rate_lpm = 480.0 * self.battery_pump_pcnt[i]
-        
-        if volume_flow_rate_lpm < 0.1: # Avoid div by zero
-            self.battery_stream_mass_flow = 0.001
-        else:
-            self.battery_stream_mass_flow = (volume_flow_rate_lpm / 60000.0) * 1050.0 # kg/s (~8.4 kg/s max?)
-            
+        self.battery_stream_mass_flow = self.calculate_battery_stream_mass_flow_rate(i)
+
         coolant_cp = 3400.0 # J/kgK
         
         max_enthalpy_delta = self.battery_stream_mass_flow * coolant_cp * (self.battery_cold_side_temp - tec_last)
@@ -597,7 +603,18 @@ class Simulation:
             (heater_heat + 0.7 * max_enthalpy_delta) / (self.battery_stream_mass_flow * coolant_cp)
 
 
+    def calculate_battery_stream_mass_flow_rate(self, i):
+        
+        # volume_flow_rate_lpm = 400.0 * self.battery_pump_pcnt[i] # Assuming 400 LPM max
 
+        if self.battery_pump_pcnt[i] < 0.1:
+            battery_stream_mass_flow = 0.001
+            volume_flow_rate_lpm = 0.1
+        else:
+            volume_flow_rate_lpm = self.BAT_VOLUME_FLOW_RATE_LPM * battery_pump_pcnt
+            battery_stream_mass_flow = (volume_flow_rate_lpm / 60000.0) * 1050.0 # kg/s (~8.4 kg/s max?)
+
+        return battery_stream_mass_flow
 
     def update_hvac_condition_and_cool(self, i):
         # Update hvac_air_temp
