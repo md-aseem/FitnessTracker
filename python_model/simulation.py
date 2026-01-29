@@ -7,6 +7,7 @@ from scipy.interpolate import RegularGridInterpolator
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 import time
+import pandas as pd
 
 class Simulation:
     # Control Constants
@@ -771,13 +772,29 @@ class Simulation:
         axs[3].grid(True)
         
         plt.tight_layout()
-        plt.savefig('simulation_results.png')
+        plt.savefig('results/simulation_results.png')
         print("Plot saved to simulation_results.png")
         # plt.show() # Commented out to prevent blocking in headless env, uncomment to see plot
+
+    def save_results_to_csv(self):
+        df = pd.DataFrame({
+            'time_s': self.time_s,
+            'battery_top_temp_c': self.battery_temp[:, 6] - 273.15,
+            'battery_bottom_temp_c': self.battery_temp[:, 0] - 273.15,
+            'ambient_temp_c': self.ambient_temp_profile - 273.15,
+            'current_a': self.current_profile,
+            'soc': self.soc,
+            'total_aux_power_w': self.total_aux_power,
+            'chiller_mode': self.chiller_mode_history
+        })
+        df.to_csv('results/python_simulation_results.csv', index=False)
+        print("Results saved to python_simulation_results.csv")
 
 if __name__ == "__main__":
     system_specs = build_system_specs()
     operational_specs = load_operation_specs()
     sim = Simulation(system_specs, operational_specs)
     sim.run()
+    sim.save_results_to_csv()
     sim.plot_results()
+
