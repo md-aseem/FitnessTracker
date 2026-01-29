@@ -28,6 +28,9 @@ class InputConfig(BaseModel):
 
     # initialization
     soc_init: float
+    
+    # Custom Profile
+    custom_power_profile_path: str = None
 
 
 ### module specs

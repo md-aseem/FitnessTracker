@@ -144,3 +144,70 @@ def generate_power_profiles_for_a_day(cp_rate: float,
             cumulative_throughput_ah += abs(d_ah)
 
     return time_s, soc, current, power_watts
+
+
+def process_custom_power_profile(custom_time: np.ndarray,
+                                 custom_power: np.ndarray,
+                                 ocv_curve: pd.DataFrame,
+                                 battery_capacity_ah: float,
+                                 soc_init: float,
+                                 dt: float = 1.0
+                                 ):
+    """
+    Process a custom power profile:
+    1. Interpolate power to simulation time steps (dt).
+    2. Calculate Current and SOC iteratively.
+    """
+    
+    # 1. Determine Simulation Time
+    t_start = custom_time[0]
+    t_end = custom_time[-1]
+    duration = t_end - t_start
+    
+    total_steps = int(duration / dt) + 1
+    time_s = np.arange(total_steps) * dt + t_start
+    
+    # 2. Interpolate Power
+    power_watts = np.interp(time_s, custom_time, custom_power)
+    
+    # 3. Calculate SOC and Current
+    current = np.zeros(total_steps)
+    soc = np.zeros(total_steps)
+    soc[0] = soc_init
+    
+    # OCV Interp Helpers
+    ocv_soc_vals = ocv_curve.iloc[:, 0].values
+    ocv_voltage_vals = ocv_curve.iloc[:, 1].values
+    
+    def get_voltage(s):
+        v = np.interp(s, ocv_soc_vals, ocv_voltage_vals)
+        return max(1.0, v)
+        
+    for i in range(total_steps):
+        
+        # Setup Current SOC
+        if i > 0:
+            current_soc = soc[i-1]
+        else:
+            current_soc = soc_init
+            
+        # Get Voltage & Current
+        v = get_voltage(current_soc)
+        
+        # I = P / V
+        # If P is provided, I is result.
+        i_val = power_watts[i] / v
+        current[i] = i_val
+        
+        # Update SOC for next step
+        if i < total_steps - 1:
+            # dSOC = - I * dt / Cap
+            d_ah = -(i_val * dt / 3600.0)
+            new_soc = current_soc + (d_ah / battery_capacity_ah)
+            
+            # Clamp SOC
+            new_soc = max(0.0, min(1.0, new_soc))
+            
+            soc[i+1] = new_soc
+            
+    return time_s, soc, current, power_watts
