@@ -46,7 +46,7 @@ class Simulation:
         self.dt = self.operational_specs.dt
         self.time_s = self.operational_specs.time_s.copy()
         self.power_profile = self.operational_specs.power_profile.copy()
-        self.soc = self.operational_specs.soc.copy()
+        self.soc = self.operational_specs.soc_profile.copy()
         self.current_profile = self.operational_specs.current_profile.copy()
         self.ambient_temp_profile = self.operational_specs.ambient_profile.copy()
         self.radiation_heat_load = self.calculate_radiation_load()
@@ -73,8 +73,8 @@ class Simulation:
         self.battery_temp = np.full([self.n, 7], initial_batt_temp)
 
         # SOC
-        self.soc = np.zeros([self.n])
-        self.soc[0] = self.system_specs.battery_specs.soc_init
+        # SOC (Already loaded from operational_specs)
+        # self.soc was initialized from profile above
 
         # Setup Heat Generation Interpolator
         self.heat_gen_interpolator = self.generate_heat_gen_interpolator()
