@@ -1,7 +1,8 @@
 import numpy as np
 import pandas as pd
 
-def generate_power_profiles_for_a_day(cp_rate: float,
+def generate_power_profiles_for_a_day(charge_rate: float,
+                                      discharge_rate: float,
                                       n_cycles: int,
                                       total_energy: float,
                                       ocv_curve: pd.DataFrame,
@@ -31,8 +32,8 @@ def generate_power_profiles_for_a_day(cp_rate: float,
     soc[0] = soc_init
     
     # Power Magnitudes
-    p_discharge = cp_rate * total_energy
-    p_charge = -cp_rate * total_energy
+    p_discharge = discharge_rate * total_energy
+    p_charge = -charge_rate * total_energy
     
     # Throughput Targets (Ah)
     # 1 Cycle = 2 * Capacity (Charge fully + Discharge fully)

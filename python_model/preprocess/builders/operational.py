@@ -13,7 +13,8 @@ def load_operation_specs() -> OperationalSpecs:
     # Load Battery Specs to access OCV Curve and other properties
     batt_specs = build_battery_specs(input_config, library_data)
 
-    cp_rate = input_config.cp_rate
+    charge_rate = input_config.max_charge_rate
+    discharge_rate = input_config.max_discharge_rate
     n_cycles = input_config.n_cycles
     
     battery_capacity_ah = batt_specs.cell_capacity_ah
@@ -45,7 +46,8 @@ def load_operation_specs() -> OperationalSpecs:
             dt=dt
         )
     else:
-        time_s, soc, current, power_watts = generate_power_profiles_for_a_day(cp_rate=cp_rate,
+        time_s, soc, current, power_watts = generate_power_profiles_for_a_day(charge_rate=charge_rate,
+                                                                  discharge_rate=discharge_rate,
                                                                   n_cycles=n_cycles,
                                                                   total_energy=battery_energy,
                                                                   ocv_curve=batt_specs.ocv_df,
@@ -56,7 +58,17 @@ def load_operation_specs() -> OperationalSpecs:
 
     ambient_temp_constant = input_config.ambient_temperature + 273.15
     time_s, ambient_profile = generate_ambient_temp_profile_for_a_day(ambient_temp_constant, dt=dt)
-    time_s, radiation_profile = generate_radiation_load_for_a_day(dt=dt)
+    
+    # Radiation
+    sr = input_config.sunrise_time
+    ss = input_config.sunset_time
+    # If sunrise == sunset or values are invalid, disable radiation
+    if sr == ss:
+         max_rad = 0
+    else:
+         max_rad = 170 # Default
+
+    time_s, radiation_profile = generate_radiation_load_for_a_day(max_radiation=max_rad, sunrise_time=sr, sunset_time=ss, dt=dt)
 
     return OperationalSpecs(time_s=time_s,
                             soc_profile=soc,

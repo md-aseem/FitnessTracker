@@ -1,8 +1,8 @@
 quantum: 2p0
 ambient_temperature: 35
-initial_battery_temp: 20
-cp_rate: 0.5
-n_cycles: 2
+
+# operational
+n_cycles: 1
 max_charge_rate: 0.44
 max_discharge_rate: 0.5
 battery_type: catl_306           # eve_306, catl_306
@@ -13,14 +13,15 @@ chiller_model: envicool_55kW_c/2 # envicool_55kW_c/4  or envicool_55kW_c/2   or
 chiller_noise_kit: False         # True/False
 
 sunrise_time: 7
-sunset_time: 19
+sunset_time: 8
 
 control_scheme: battery_temp_control
 
 
 # initialization
-soc_init: 0.99
+soc_init: 1
+initial_battery_temp: 20
 soh_init: 1
 battery_temp_init: 20
 
-custom_power_profile_path: python_model/custom_profile.csv
+custom_power_profile_path: ""

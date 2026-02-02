@@ -11,7 +11,6 @@ class InputConfig(BaseModel):
     quantum: Literal["2p0", "3p0", "2p1"]
 
     ## operational
-    cp_rate: float
     n_cycles: int
 
     ambient_temperature: float
