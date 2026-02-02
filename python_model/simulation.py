@@ -144,7 +144,7 @@ class Simulation:
         self.batt_ave_temp_operating = 0.0
         self.batt_ave_temp_not_operating = 0.0
         
-        self.idle_rest_cutoff_temp = 298.15 # 25 C approximate from C
+        self.idle_rest_cutoff_temp = 296.15 # 23 C (Matches C-Code)
 
 
     def generate_heat_gen_interpolator(self):
