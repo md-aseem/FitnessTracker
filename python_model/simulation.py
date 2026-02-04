@@ -21,15 +21,15 @@ class Simulation:
     CIRCULATE_MODE = 3
     
     # Thresholds (Hardcoded from C model for now)
-    BATTERY_COOL_TARGET = 303.15 # 30 C
-    BATTERY_COOL_MIN = 298.15 # 25 C
-    BATTERY_COOL_EXIT = 299.15 # 26 C
-    B_COOLANT_TARGET = 293.15 # 20 C
+    BATTERY_COOL_TARGET = 298.15 # 25 C
+    BATTERY_COOL_MIN = 292.65 # 19.5 C
+    BATTERY_COOL_EXIT = 295.15 # 22 C
+    B_COOLANT_TARGET = 296.15 # 23 C
     
     BATTERY_HEAT_MIN = 288.15 # 15 C
     BATTERY_HEAT_TARGET = 291.15 # 18 C
-    BATTERY_HEAT_MAX = 303.15 # 30 C
-    BATTERY_HEAT_EXIT = 301.15 # 28 C
+    BATTERY_HEAT_MAX = 295.15 # 22 C
+    BATTERY_HEAT_EXIT = 290.65 # 17.5 C
     
     CIRCULATION_TIME_LIMIT = 600.0 # seconds
     TEMP_STBL = 1.0 # Stability threshold
@@ -785,7 +785,8 @@ class Simulation:
             'current_a': self.current_profile,
             'soc': self.soc,
             'total_aux_power_w': self.total_aux_power,
-            'chiller_mode': self.chiller_mode_history
+            'chiller_mode': self.chiller_mode_history,
+            'compressor_pct': self.compressor_pcnt
         })
         df.to_csv('results/python_simulation_results.csv', index=False)
         print("Results saved to python_simulation_results.csv")
