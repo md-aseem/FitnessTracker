@@ -51,7 +51,6 @@ def generate_power_profiles_for_a_day(charge_rate: float,
     half_cycle_ah_throughput_array = []
 
     for i in range(starting_rest_steps, total_steps):
-
         if cycles > n_cycles:
             break
 
@@ -68,7 +67,7 @@ def generate_power_profiles_for_a_day(charge_rate: float,
 
         else:
             state = 'rest'
-            if rest_timer > rest_between_cycles:
+            if rest_timer > rest_between_cycles * 3600:
                 state = 'active'
                 cycles += 0.5
                 half_cycle_ah_throughput = 0
@@ -176,7 +175,8 @@ if __name__ == "__main__":
                                                                     total_energy=300*3.2,
                                                                     ocv_curve=ocv_curve,
                                                                     battery_capacity_ah=300,
-                                                                    soc_init=0.0)
+                                                                    soc_init=0.2,
+                                                                    starting_time=2)
     
     import matplotlib.pyplot as plt
 
