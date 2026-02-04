@@ -1,0 +1,119 @@
+
+   *** Running Q3 Simulator ***
+
+  ******* READING INPUTS FROM FILE in.input *******
+
+
+ FIXED AMBIENT TEMPERATURE:          35.00 (degress C)
+ COMPONENT INITIAL TEMPERATURE:      20.00 (degrees C)
+ MAX CHARGE RATE:                    0.44
+ MAX DISCHARGE RATE:                 0.50
+ BATTERY MODEL:                      catl_306Ahr
+ BATTERY LIFE CONDITION:             beginning_of_life
+ CHILLER MODEL:                      envicool_55kW_c/2
+ CHILLER NOISE KIT PRESENT:          no
+ INITIAL STATE OF CHARGE:             0.99 PERCENT
+
+
+ *** FINISHED READING INPUTS ***
+
+
+ This run is for Quantum 2.0
+ There are  52 cells per module, and  80 modules inside the Quantum
+
+ No solar radiation model will be used in this run
+ To use a solar radiation model, call out sunrise and sunset times
+ using @SUNRISE_TIME{  } and @SUNSET_TIME{ }
+
+ Using the Envicool 55kW Chiller
+
+ The Noise kit is not present, the input does not change this
+ *** CHILLER PERFORMANCE TABLES ***
+
+
+     *** AT 18C COLD SIDE TEMP ***
+   Ambient Temp     Cooling       Aux Power
+   (degrees C)     Power (W)    Consumption (W)
+    -30.00          70500.0        15510.6
+    -10.00          70500.0        15510.6
+      0.00          70500.0        15510.6
+      5.00          69000.0        15749.2
+     15.00          68000.0        16703.8
+     20.00          65000.0        17181.0
+     25.00          62500.0        17658.2
+     30.00          58000.0        19090.0
+     35.00          55000.0        20999.0
+     40.00          51000.0        22430.8
+     45.00          46500.0        21476.2
+     50.10          30500.0        16703.8
+
+
+     *** AT 23C COLD SIDE TEMP ***
+   Ambient Temp     Cooling       Aux Power
+   (degrees C)     Power (W)    Consumption (W)
+   -30.00            72500.0        15033.4
+   -10.00            72500.0        15033.4
+     0.00            72500.0        15033.4
+     5.00            71000.0        15272.0
+    15.00            70000.0        16226.5
+    20.00            67000.0        16703.8
+    25.00            64500.0        17181.0
+    30.00            60000.0        18612.8
+    35.00            57000.0        20521.8
+    40.00            53000.0        21953.5
+    45.00            48500.0        20999.0
+    50.10            32500.0        16226.5
+
+
+ Using the CATL 306 A*hr battery properties
+
+  No input file for current was found, a hard-coded current profile will be used
+
+
+  *** RUNNING *** 
+
+  0.033 hours:  Entering Standby mode
+
+  4.388 hours:  Entering Cooling Mode because BATTERY_INLET_TEMP > B_COOLANT_TARGET      -->  296.151 > 296.150
+  7.694 hours:  Leaving  Cooling Mode because TECLAST < (B_COOLANT_TARGET - TWO)         -->  293.150 < 294.150
+                                     
+  7.694 hours:  Entering Standby mode
+
+ 10.044 hours:  Entering Cooling Mode because BATTERY_INLET_TEMP > B_COOLANT_TARGET      -->  296.150 > 296.150
+ 13.758 hours:  Leaving  Cooling Mode because TECLAST < (B_COOLANT_TARGET - TWO)         -->  293.150 < 294.150
+                                     
+ 13.758 hours:  Entering Standby mode
+
+ 17.271 hours:  Entering Cooling Mode because BATTERY_INLET_TEMP > B_COOLANT_TARGET      -->  296.150 > 296.150
+ 18.087 hours:  Leaving  Cooling Mode because TECLAST < (B_COOLANT_TARGET - TWO)         -->  293.150 < 294.150
+                                     
+ 18.087 hours:  Entering Standby mode
+
+
+ *** RUN SUMMARY ***
+
+ AVERAGE AMBIENT TEMPERATURE:       35.00 degrees C
+
+ BATTERY HEAT GENERATED:           203.45 kW*hrs
+ HEAT EXCHANGE WITH AMBIENT AIR:    28.08 kW*hrs
+ RADIATION HEAT LOAD:                0.00 kW*hrs
+
+ AUX ENERGY USED:                  132.73 kW*hrs
+   OPERATING AUX:                   64.08 kW*hrs
+     RESTING AUX:                   57.49 kW*hrs
+      IDLING AUX:                   11.16 kW*hrs
+
+   CHILLER AUX:                    124.53 kW*hrs   (1.86 Chiller COP)
+   HVAC AUX:                         0.00 kW*hrs
+   DEHUMIDIFIER AUX:                 1.00 kW*hrs
+   AUX LOAD  1:                      7.20 kW*hrs
+
+ MAX BATTERY TEMP:                  31.64 degrees C
+ AVERAGE BATTERY TEMP:              23.72 degrees C
+ OPERATING AVERAGE BATTERY TEMP:    27.71 degrees C
+ REST/IDLE AVERAGE BATTERY TEMP:    22.86 degrees C
+
+ INITIAL SOH:                      100.00
+ END-OF-YEAR SOH (directional):     95.24
+
+

@@ -9,7 +9,7 @@ def generate_power_profiles_for_a_day(charge_rate: float,
                                       ocv_curve: pd.DataFrame,
                                       battery_capacity_ah: float,
                                       soc_init: float,
-                                      rest_between_cycles: float = 2,
+                                      rest_between_cycles: float = 4,
                                       starting_time: int = 4,  # 24 hour timezone
                                       dt: float = 1.0
                                       ):

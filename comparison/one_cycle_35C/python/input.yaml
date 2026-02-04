@@ -19,7 +19,7 @@ control_scheme: battery_temp_control
 
 
 # initialization
-soc_init: 0.99
+soc_init: 1
 initial_battery_temp: 20
 soh_init: 1
 battery_temp_init: 20
