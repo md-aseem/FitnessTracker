@@ -52,7 +52,8 @@ def generate_power_profiles_for_a_day(charge_rate: float,
 
     for i in range(starting_rest_steps, total_steps):
         if cycles > n_cycles:
-            break
+            soc[i] = soc[i-1]
+            continue
 
         # update state
         ### we are using two variables to track the state -> state = active/rest and is_charge = True/False
@@ -80,7 +81,6 @@ def generate_power_profiles_for_a_day(charge_rate: float,
             rest_timer += dt
 
         if state == 'active':
-
             voltage = get_voltage(soc[i-1])
             rate = charge_rate if is_charge else -discharge_rate
             current_power = rate * total_energy
