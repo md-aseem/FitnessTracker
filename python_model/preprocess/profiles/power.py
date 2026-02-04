@@ -37,9 +37,9 @@ def generate_power_profiles_for_a_day(charge_rate: float,
     starting_rest_steps = int(3600 * starting_time / dt)
     soc[:starting_rest_steps] = soc_init
 
+    soc_bp = ocv_curve['soc'].values
+    ocv_bp = ocv_curve['ocv'].values
     def get_voltage(soc):
-        soc_bp = ocv_curve['soc'].values
-        ocv_bp = ocv_curve['ocv'].values
         return np.interp(soc, soc_bp, ocv_bp)
 
     # initializing the counter and charge direction
@@ -51,7 +51,7 @@ def generate_power_profiles_for_a_day(charge_rate: float,
     half_cycle_ah_throughput_array = []
 
     for i in range(starting_rest_steps, total_steps):
-        if cycles > n_cycles:
+        if cycles >= n_cycles:
             soc[i] = soc[i-1]
             continue
 
@@ -170,8 +170,8 @@ if __name__ == "__main__":
     })
     
     time_s, soc, current, power = generate_power_profiles_for_a_day(charge_rate=0.4,
-                                                                    discharge_rate=0.8,
-                                                                    n_cycles=1,
+                                                                    discharge_rate=0.5,
+                                                                    n_cycles=2,
                                                                     total_energy=300*3.2,
                                                                     ocv_curve=ocv_curve,
                                                                     battery_capacity_ah=300,
