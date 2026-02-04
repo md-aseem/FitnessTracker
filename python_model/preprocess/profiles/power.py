@@ -1,10 +1,11 @@
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 
 def generate_power_profiles_for_a_day(charge_rate: float,
                                       discharge_rate: float,
                                       n_cycles: int,
-                                      total_energy: float,
+                                      total_energy: float, # total_energy = battery_ah_capacity * nominal_voltage
                                       ocv_curve: pd.DataFrame,
                                       battery_capacity_ah: float,
                                       soc_init: float,
@@ -24,127 +25,75 @@ def generate_power_profiles_for_a_day(charge_rate: float,
     
     # Initialize full day arrays
     time_s = np.arange(total_steps) * dt
-    power_watts = np.zeros(total_steps)
+    power = np.zeros(total_steps)
     current = np.zeros(total_steps)
     soc = np.zeros(total_steps)
-    
-    # Initialization
-    soc[0] = soc_init
-    
-    # Power Magnitudes
-    p_discharge = discharge_rate * total_energy
-    p_charge = -charge_rate * total_energy
-    
+
     # Throughput Targets (Ah)
     # 1 Cycle = 2 * Capacity (Charge fully + Discharge fully)
-    target_throughput_ah = n_cycles * 2.0 * battery_capacity_ah
-    cumulative_throughput_ah = 0.0
-    
-    # State Machine Constants
-    STATE_CHARGE = 1
-    STATE_DISCHARGE = 2
-    STATE_REST = 3
-    
-    # Initial State
-    current_state = STATE_CHARGE
-    next_state_after_rest = STATE_DISCHARGE # If we hit limit in Charge, we go to Discharge
-    
-    steps_in_rest = 0
-    rest_duration_steps = int(rest_between_cycles * 3600 / dt)
-    start_delay_steps = int(starting_time * 3600 / dt)
-    
-    # Performance optimization: pre-fetch arrays
-    ocv_soc_vals = ocv_curve.iloc[:, 0].values
-    ocv_voltage_vals = ocv_curve.iloc[:, 1].values
-    
-    # Helper to clean code
-    def get_voltage(s):
-        v = np.interp(s, ocv_soc_vals, ocv_voltage_vals)
-        return max(1.0, v) # safety
-    
-    # Main Loop
-    for i in range(total_steps):
-        
-        # 1. Setup Step
-        # If not first step, propagate SOC from previous
-        if i > 0:
-            current_soc = soc[i-1]
-        else:
-            current_soc = soc_init
-            
-        # 2. Check Start Delay
-        if i < start_delay_steps:
-            power_watts[i] = 0.0
-            current[i] = 0.0
-            if i < total_steps - 1: soc[i+1] = current_soc
-            continue
-            
-        # 3. Check Completion
-        if cumulative_throughput_ah >= target_throughput_ah:
-            power_watts[i] = 0.0
-            current[i] = 0.0
-            if i < total_steps - 1: soc[i+1] = current_soc
-            continue
-            
-        # 4. State Machine Logic
-        
-        step_power = 0.0
-        step_current = 0.0
-        
-        if current_state == STATE_REST:
-            step_power = 0.0
-            step_current = 0.0
-            steps_in_rest += 1
-            
-            if steps_in_rest >= rest_duration_steps:
-                current_state = next_state_after_rest
-                steps_in_rest = 0
-                
-        elif current_state == STATE_CHARGE:
-            # Check Limits first
-            if current_soc >= 1.0:
-                current_state = STATE_REST
-                next_state_after_rest = STATE_DISCHARGE
-                steps_in_rest = 0 # Start rest immediately
-                # No power this step? or treat as first step of rest?
-                # Treat as transition/rest, so 0 power.
-                step_power = 0.0
-                step_current = 0.0
-            else:
-                step_power = p_charge
-                v = get_voltage(current_soc)
-                step_current = step_power / v
-                
-        elif current_state == STATE_DISCHARGE:
-            # Check Limits first
-            if current_soc <= 0.0:
-                current_state = STATE_REST
-                next_state_after_rest = STATE_CHARGE
-                steps_in_rest = 0
-                step_power = 0.0
-                step_current = 0.0
-            else:
-                step_power = p_discharge
-                v = get_voltage(current_soc)
-                step_current = step_power / v
-        
-        # 5. Apply & Update
-        power_watts[i] = step_power
-        current[i] = step_current
-        
-        # Update SOC
-        if i < total_steps - 1:
-            # soc_change = - (I * dt / 3600) / Cap
-            d_ah = -(step_current * dt / 3600.0) # Amp-Hours (signed)
-            
-            new_soc = current_soc + (d_ah / battery_capacity_ah)
-            new_soc = max(0.0, min(1.0, new_soc)) # Clamp
-            soc[i+1] = new_soc
-            
-            # Accumulate Throughput (Absolute Ah)
-            cumulative_throughput_ah += abs(d_ah)
+    half_cycle_target_ah_throughput = battery_capacity_ah
 
-    return time_s, soc, current, power_watts
+    # initial rest
+    starting_rest_steps = int(3600 * starting_time / dt)
+    soc[:starting_rest_steps] = soc_init
+
+    def get_voltage(soc):
+        soc_bp = ocv_curve['soc'].values
+        ocv_bp = ocv_curve['ocv'].values
+        return np.interp(soc, soc_bp, ocv_bp)
+
+    # initializing the counter and charge direction
+    soc[:starting_rest_steps] = soc_init
+    half_cycle_ah_throughput = 0
+    is_charge = True
+    rest_timer = 0
+    cycles = 0
+    half_cycle_ah_throughput_array = []
+
+    for i in range(starting_rest_steps, total_steps):
+
+        if cycles > n_cycles:
+            break
+
+        # update state
+        ### we are using two variables to track the state -> state = active/rest and is_charge = True/False
+        if half_cycle_ah_throughput < half_cycle_target_ah_throughput:
+            state = 'active'
+            rest_timer = 0
+
+            if is_charge and soc[i-1] >= 1: # changing state to discharging if prev state is charging and soc is 1.
+                is_charge = not is_charge
+            elif not is_charge and soc[i-1] <= 0: # changing state to charging if prev state is discharging and soc is 0.
+                is_charge = not is_charge
+
+        else:
+            state = 'rest'
+            if rest_timer > rest_between_cycles:
+                state = 'active'
+                cycles += 0.5
+                half_cycle_ah_throughput = 0
+
+        # time-stepping according to the state
+        if state == 'rest':
+            soc[i] = soc[i-1]
+            current[i] = 0
+            power[i] = 0
+            rest_timer += dt
+
+        if state == 'active':
+
+            voltage = get_voltage(soc[i-1])
+            rate = charge_rate if is_charge else -discharge_rate
+            current_power = rate * total_energy
+            current_current = current_power / voltage
+            soc[i] = soc[i-1] + current_current * dt / (battery_capacity_ah * 3600)
+            power[i] = current_power
+            current[i] = current_current
+            half_cycle_ah_throughput += abs(current_current) * dt / 3600
+
+        half_cycle_ah_throughput_array.append(half_cycle_ah_throughput)
+
+    return time_s, soc, current, power
 
 
 def process_custom_power_profile(custom_time: np.ndarray,
@@ -212,3 +161,25 @@ def process_custom_power_profile(custom_time: np.ndarray,
             soc[i+1] = new_soc
             
     return time_s, soc, current, power_watts
+
+
+if __name__ == "__main__":
+    
+    ocv_curve = pd.DataFrame({
+        'soc': [0, 0.2, 0.5, 1],
+        'ocv': [2.8, 3.2, 3.3, 3.4]
+    })
+    
+    time_s, soc, current, power = generate_power_profiles_for_a_day(charge_rate=0.4,
+                                                                    discharge_rate=0.8,
+                                                                    n_cycles=2,
+                                                                    total_energy=300*3.2,
+                                                                    ocv_curve=ocv_curve,
+                                                                    battery_capacity_ah=300,
+                                                                    soc_init=0.0)
+    
+    import matplotlib.pyplot as plt
+
+    plt.figure(figsize=(10, 5))
+    plt.plot(time_s, soc)
+    plt.show()
