@@ -171,15 +171,15 @@ if __name__ == "__main__":
     
     time_s, soc, current, power = generate_power_profiles_for_a_day(charge_rate=0.4,
                                                                     discharge_rate=0.8,
-                                                                    n_cycles=2,
+                                                                    n_cycles=1,
                                                                     total_energy=300*3.2,
                                                                     ocv_curve=ocv_curve,
                                                                     battery_capacity_ah=300,
                                                                     soc_init=0.2,
                                                                     starting_time=2)
-    
-    import matplotlib.pyplot as plt
 
-    plt.figure(figsize=(10, 5))
-    plt.plot(time_s, soc)
-    plt.show()
+    fig, axs = plt.subplots(3, 1)
+    axs[0].plot(time_s/3600, soc)
+    axs[1].plot(time_s/3600, current)
+    axs[2].plot(time_s/3600, power)
+    fig.show()
