@@ -7,19 +7,19 @@ max_charge_rate: 0.44
 max_discharge_rate: 0.5
 battery_type: catl_306           # eve_306, catl_306
 battery_life: bol                # bol, eol
-chiller_model: envicool_55kW_c/2 # envicool_55kW_c/4  or envicool_55kW_c/2   or
+chiller_model: envicool_q2_55kw_c/2 # envicool_55kW_c/4  or envicool_55kW_c/2   or
                                  # bergstrom_55kW_c/4 or bergstrom_55kW_c/2
 
 chiller_noise_kit: False         # True/False
 
 sunrise_time: 7
-sunset_time: 8
+sunset_time: 7
 
 control_scheme: battery_temp_control
 
 
 # initialization
-soc_init: 0.99
+soc_init: 1
 initial_battery_temp: 20
 soh_init: 1
 battery_temp_init: 20

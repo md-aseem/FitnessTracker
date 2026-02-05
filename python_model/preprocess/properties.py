@@ -85,21 +85,6 @@ class ChillerSpecs:
     battery_sensitivity: float
     inverter_sensitivity: float
 
-    # ambiguous
-    battery_temp_target_C: int
-    inverter_temp_target_C: int
-
-    electronics_aux_power: float
-
-    # these power values are multiplied by percent, from 0 to 1, to get power of each component in the code
-    pcs_pump_power_per_pcnt: float
-    bat_pump_power_per_prcnt: float
-    fan_aux_power_per_pcnt: float
-
-    # flow rate
-    bat_volume_flow_rate_per_prcnt: float
-    pcs_volume_flow_rate_per_prcnt: float
-
     # caps/limits
     pump_aux_cap: float
     comp_aux_cap: float
