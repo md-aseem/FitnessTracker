@@ -10,22 +10,16 @@ def build_chiller_specs(input_config: InputConfig, library_data) -> ChillerSpecs
     chiller_model = input_config.chiller_model
     quantum = input_config.quantum
 
-    is_envicool = 'envicool_55kW' in chiller_model
-    if is_envicool and quantum == '2p0':
-        chiller_curves_dir = library_data['chillers']['envicool_q2_55kw_c/4']['chiller_curves_dir']
+    chiller_data = library_data['chillers'][chiller_model]
 
-        low_temp = pd.read_csv(Path(__file__).parent.parent.parent / chiller_curves_dir / "envicool_55kw_18c.csv")
-        low_temp['temp'] = 18
-
-        high_temp = pd.read_csv(Path(__file__).parent.parent.parent / chiller_curves_dir / "envicool_55kw_23c.csv")
-        high_temp['temp'] = 23
-
-        chiller_curves_df = pd.concat([low_temp, high_temp], ignore_index=True)
-
-    else:
-        chiller_curves_df = pd.DataFrame()
-
-    chiller_data = library_data['chillers']['envicool_q2_55kw_c/4']
+    # loading chiller curves
+    print(f"Using Chiller: {chiller_model}")
+    chiller_curves_dir = chiller_data['chiller_curves_dir']
+    low_temp = pd.read_csv(Path(__file__).parent.parent.parent / chiller_curves_dir / "envicool_55kw_18c.csv")
+    low_temp['temp'] = 18
+    high_temp = pd.read_csv(Path(__file__).parent.parent.parent / chiller_curves_dir / "envicool_55kw_23c.csv")
+    high_temp['temp'] = 23
+    chiller_curves_df = pd.concat([low_temp, high_temp], ignore_index=True)
 
     return ChillerSpecs(
         chiller_model=chiller_model,
