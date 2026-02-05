@@ -8,7 +8,7 @@
 #define IS_THERE_AN_HVAC                    0
 
 /* total system energy in megawatt-hours */
-#define TOTAL_SYSTEM_ENERGY                 4.0
+#define TOTAL_SYSTEM_ENERGY                 4.07
 
 /* max rate of charge or discharge of this system      */
 /* 4 hours to do a charge -> this number is 0.25       */
