@@ -36,7 +36,7 @@ class Simulation:
     
     HEATER_HEAT = 18000 # Watts? Checking C code implies this variable exists or is constant
 
-    BAT_VOLUME_FLOW_RATE_LPM = 400.0
+    BAT_VOLUME_FLOW_RATE_LPM = 480.0
 
     def __init__(self, system_specs: SystemSpecs, operational_specs: OperationalSpecs):
         self.system_specs = system_specs
@@ -318,7 +318,7 @@ class Simulation:
         coolant_cp = 3400.0 # J/kgK
         
         # Temp leaving chiller (entering cold plate)
-        tlc_last = self.battery_stream_temp_leaving_chiller[i-1]
+        tlc_last = self.battery_stream_temp_leaving_chiller[i] # This comes from update_chiller_condition_and_cool
         
         # Max Enthalpy Delta
         # maxEnthalpyDelta = c->batteryStream->massFlowRate*c->batteryStream->coolantCp*(b->tempLast[0] - c->batteryStream->tlcLast);
@@ -329,7 +329,7 @@ class Simulation:
         bottom_q = -0.4 * max_possible_heat_transfer + (self.battery_temp[i-1, 1] - self.battery_temp[i-1, 0]) * b_specs.R[1]
         
         # topQ    = (simmain->internalAirTemp - b->tempLast[6])*R[2] + (b->tempLast[5] - b->tempLast[6])*R[1];
-        top_q = (self.internal_air_temp[i] - self.battery_temp[i-1, 6]) * b_specs.R[2] + \
+        top_q = (self.internal_air_temp[i-1] - self.battery_temp[i-1, 6]) * b_specs.R[2] + \
                 (self.battery_temp[i-1, 5] - self.battery_temp[i-1, 6]) * b_specs.R[1]
                 
         # Heat into Chiller (for next step calculation of chiller return temp)
@@ -611,7 +611,7 @@ class Simulation:
     def calculate_battery_stream_mass_flow_rate(self, i):
         # Clip pump percentage at 0.01 to match C model's floor speed
         pump_pcnt = np.clip(self.battery_pump_pcnt[i], 0.01, 1.0)
-        
+
         volume_flow_rate_lpm = self.BAT_VOLUME_FLOW_RATE_LPM * pump_pcnt
         battery_stream_mass_flow = (volume_flow_rate_lpm / 60000.0) * 1050.0 # kg/s (~8.4 kg/s max)
 
