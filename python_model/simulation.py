@@ -31,10 +31,10 @@ class Simulation:
     BATTERY_HEAT_MAX = 295.15 # 22 C
     BATTERY_HEAT_EXIT = 290.65 # 17.5 C
     
-    CIRCULATION_TIME_LIMIT = 600.0 # seconds
-    TEMP_STBL = 1.0 # Stability threshold
+    CIRCULATION_TIME_LIMIT = 120.0 # seconds
+    TEMP_STBL = 3.0 # Stability threshold
     
-    HEATER_HEAT = 5000.0 # Watts? Checking C code implies this variable exists or is constant
+    HEATER_HEAT = 18000 # Watts? Checking C code implies this variable exists or is constant
 
     BAT_VOLUME_FLOW_RATE_LPM = 400.0
 
@@ -81,8 +81,8 @@ class Simulation:
         self.heat_gen_interpolator = self.generate_heat_gen_interpolator()
         
         # --- Control State Initialization ---
-        self.chiller_mode = self.STANDBY_MODE
-        self.chiller_mode_history = np.zeros([self.n])
+        self.chiller_mode = self.CIRCULATE_MODE
+        self.chiller_mode_history = np.ones([self.n]) * self.chiller_mode
         self.came_from_standby = False
         self.circ_run_timer = 0.0
         
@@ -350,7 +350,14 @@ class Simulation:
 
         # Node 6 (Top)
         # b->temperature[6] += (topQ    + (ONE/7.0)*batteryTotalHeatGeneration(simmain) +  batteryTabHeat)*transientDt/(b->mass * b->cp / 7.0);
-        battery_tab_heat = 0.0 
+        
+        # Tab heat implementation matching C code macro:
+        # heat = 2.5 * 104.0 * 48.0 * (current / 150.0)
+        # C code: ((currentCurrent > 0.0) ? (2.5*104.0*48.0*(currentCurrent/150.0)) : (-2.5*104.0*48.0*(currentCurrent/150.0)))
+        # This simplifies to: 2.5 * 104.0 * 48.0 * abs(current) / 150.0
+        current_amps = self.current_profile[i]
+        battery_tab_heat = 2.5 * 104.0 * 48.0 * abs(current_amps) / 150.0
+
         self.battery_temp[i, 6] = self.battery_temp[i-1, 6] + \
                                   (top_q + (1.0/7.0) * total_heat_gen + battery_tab_heat) * self.dt / \
                                   (b_specs.mass * b_specs.cp / 7.0)
