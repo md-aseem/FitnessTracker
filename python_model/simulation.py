@@ -540,16 +540,7 @@ class Simulation:
 
     def update_chiller_condition_and_cool(self, i):
         c_specs = self.system_specs.chiller_specs
-        
-        # 1. Update Chiller Cold Side Temperature
-        # Simplified linear model from C likely (or fixed)? 
-        # C code calls setRefrigeratedLoopColdHXTemperature(simmain).
-        # I'll approximate: If compressor is ON, cold plate gets cold.
-        # If OFF, it drifts to ambient?
 
-        # 1. Update Chiller Cold Side Temperature
-        # Implements setRefrigeratedLoopColdHXTemperature(simmain) logic
-        
         # Constants
         C_COEFF = 1.0
         BASE_COLD_SIDE_TEMPERATURE = 292.15
