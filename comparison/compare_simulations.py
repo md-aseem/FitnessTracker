@@ -42,7 +42,9 @@ axs[0].plot(df_p['time_hr'], df_p['soc'], label='p')
 axs[0].legend()
 axs[0].set_ylabel("SOC")
 
-axs[1].plot(df_c['Time(hr)'], df_c['Current(A)'])
+axs[1].plot(df_c['Time(hr)'], df_c['Current(A)'], label='C')
+axs[1].plot(df_p['time_hr'], df_p['current_a'], label='P')
+axs[1].legend()
 axs[1].set_ylabel("Current (A)")
 
 axs[2].plot(df_c['Time(hr)'], df_c['Bat_temp_6'] - 273.16, label="Battery Max - C")
