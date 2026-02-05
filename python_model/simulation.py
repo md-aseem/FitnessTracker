@@ -80,7 +80,7 @@ class Simulation:
 
         # Setup Heat Generation Interpolator
         self.heat_gen_interpolator = self.generate_heat_gen_interpolator()
-        self.cell_heat_vector = np.zeros([self.n])
+        self.cell_heat_gen_profile = self.calculate_battery_heat_generation()
 
         # --- Control State Initialization ---
         self.chiller_mode = self.CIRCULATE_MODE
@@ -300,7 +300,7 @@ class Simulation:
     def update_battery_temp(self, i):
 
         # Calculate Heat Generation
-        total_heat_gen = self.calculate_battery_heat_generation(i)
+        total_heat_gen = self.cell_heat_gen_profile[i] * self.system_specs.battery_specs.n_cells
         
         # Update Temperatures
         b_specs = self.system_specs.battery_specs
@@ -381,20 +381,14 @@ class Simulation:
         # Assuming index 0 is SOC and index 1 is Voltage
         return np.interp(soc, ocv_df.iloc[:, 0], ocv_df.iloc[:, 1])
 
-    def calculate_battery_heat_generation(self, i):
+    def calculate_battery_heat_generation(self):
         # Interpolate 2D: SOC and C-Rate
-        
-        current_amps = self.current_profile[i]
-        c_rate = current_amps / self.system_specs.battery_specs.cell_capacity_ah
 
-        soc = self.soc[i]
-        cell_heat = self.heat_gen_interpolator((soc, c_rate))
-        self.cell_heat_vector[i] = cell_heat
-        
-        # Total Heat
-        total_heat = cell_heat * self.system_specs.battery_specs.n_cells
+        c_rate_profile = self.current_profile / self.system_specs.battery_specs.cell_capacity_ah
+        soc_profile = self.soc
+        cell_heat_gen_profile = self.heat_gen_interpolator((soc_profile, c_rate_profile))
 
-        return total_heat
+        return cell_heat_gen_profile
 
     def calculate_radiation_load(self):
 
@@ -793,7 +787,7 @@ class Simulation:
             'total_aux_power_w': self.total_aux_power,
             'chiller_mode': self.chiller_mode_history,
             'compressor_pct': self.compressor_pcnt,
-            'cell_heat': self.cell_heat_vector
+            'cell_heat': self.cell_heat_gen_profile
         })
         df.to_csv('results/python_simulation_results.csv', index=False)
         print("Results saved to python_simulation_results.csv")
