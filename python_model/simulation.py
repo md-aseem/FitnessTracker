@@ -67,8 +67,10 @@ class Simulation:
         # Wall Initialization (Linear Gradient from Internal to Ambient)
         initial_ambient = self.ambient_temp_profile[0]
 
-        self.steel_walls_temp = np.ones([self.n, 7]) * initial_ambient
-        self.insulation_walls_temp = np.ones([self.n, 7]) * initial_ambient
+        # Generate gradient: Start at internal (virtual), end at ambient (Node 6)
+        wall_grad = np.linspace(initial_batt_temp, initial_ambient, 8)[1:]
+        self.steel_walls_temp = np.tile(wall_grad, (self.n, 1))
+        self.insulation_walls_temp = np.tile(wall_grad, (self.n, 1))
 
         # Battery Temp
         self.battery_temp = np.full([self.n, 7], initial_batt_temp)
