@@ -76,12 +76,12 @@ class Simulation:
         self.battery_temp = np.full([self.n, 7], initial_batt_temp)
 
         # SOC
-        # SOC (Already loaded from operational_specs)
         # self.soc was initialized from profile above
 
         # Setup Heat Generation Interpolator
         self.heat_gen_interpolator = self.generate_heat_gen_interpolator()
-        
+        self.cell_heat_vector = np.zeros([self.n])
+
         # --- Control State Initialization ---
         self.chiller_mode = self.CIRCULATE_MODE
         self.chiller_mode_history = np.ones([self.n]) * self.chiller_mode
@@ -389,6 +389,7 @@ class Simulation:
 
         soc = self.soc[i]
         cell_heat = self.heat_gen_interpolator((soc, c_rate))
+        self.cell_heat_vector[i] = cell_heat
         
         # Total Heat
         total_heat = cell_heat * self.system_specs.battery_specs.n_cells
@@ -791,7 +792,8 @@ class Simulation:
             'soc': self.soc,
             'total_aux_power_w': self.total_aux_power,
             'chiller_mode': self.chiller_mode_history,
-            'compressor_pct': self.compressor_pcnt
+            'compressor_pct': self.compressor_pcnt,
+            'cell_heat': self.cell_heat_vector
         })
         df.to_csv('results/python_simulation_results.csv', index=False)
         print("Results saved to python_simulation_results.csv")
