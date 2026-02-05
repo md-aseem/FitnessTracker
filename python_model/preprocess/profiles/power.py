@@ -107,17 +107,18 @@ def process_custom_power_profile(custom_time: np.ndarray,
     1. Interpolate power to simulation time steps (dt).
     2. Calculate Current and SOC iteratively.
     """
+    print(f"Loading custom power profile")
+    # 1. Determine Simulation Time (Fixed 24 hours)
+    SECONDS_IN_DAY = 86400
     
-    # 1. Determine Simulation Time
-    t_start = custom_time[0]
-    t_end = custom_time[-1]
-    duration = t_end - t_start
-    
-    total_steps = int(duration / dt) + 1
-    time_s = np.arange(total_steps) * dt + t_start
+    # Generate time steps for exactly one day
+    total_steps = int(SECONDS_IN_DAY / dt) + 1
+    time_s = np.arange(total_steps) * dt
     
     # 2. Interpolate Power
-    power_watts = np.interp(time_s, custom_time, custom_power)
+    # Use np.interp with left/right fill of 0.0 to pad if custom profile is shorter
+    # If custom profile is longer, it will just pick values up to 24h
+    power_watts = np.interp(time_s, custom_time, custom_power, left=0.0, right=0.0)
     
     # 3. Calculate SOC and Current
     current = np.zeros(total_steps)
