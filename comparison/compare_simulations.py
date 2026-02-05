@@ -1,5 +1,7 @@
 import pandas as pd
 import numpy as np
+import matplotlib
+matplotlib.use("Qt5Agg")
 import matplotlib.pyplot as plt
 import os
 
@@ -35,7 +37,7 @@ p_mode_map = {
 }
 df_p['chiller_mode'] = df_p['chiller_mode'].map(p_mode_map)
 
-fig, axs = plt.subplots(5, 1, sharex=True, figsize=(5, 10))
+fig, axs = plt.subplots(6, 1, sharex=True, figsize=(5, 10))
 
 axs[0].plot(df_c['Time(hr)'], df_c['SOC'], label='c')
 axs[0].plot(df_p['time_hr'], df_p['soc'], label='p')
@@ -62,6 +64,12 @@ axs[4].plot(df_p['time_hr'], df_p['chiller_mode'])
 axs[4].set_ylabel("Chiller Mode")
 axs[4].set_xlabel("Time (hr)")
 
+axs[5].plot(df_c['Time(hr)'], df_c['Cell_Heat_Gen_(W)'], label='c')
+axs[5].plot(df_p['time_hr'], df_p['cell_heat']*52*8*10*1.3, label='p')
+axs[5].legend()
+axs[5].set_ylabel("Heat")
+
 fig.tight_layout()
-fig.show()
+plt.show(block=True)
+
 pass
