@@ -11,10 +11,15 @@ def generate_radiation_load_for_a_day(max_radiation: int = 170, sunrise_time: in
     time_s = np.arange(total_steps) * dt
     time_hr = time_s / 3600
 
-    x = time_hr - (0.5 * (sunrise_time + sunset_time))
-    half_duration = 0.5*(sunset_time - sunrise_time)
-    radiation = 850.0 * (1 - (x * x / (half_duration * half_duration)));
-    radiation = np.clip(radiation, 0, max_radiation)
+    if sunset_time > sunrise_time:
+        x = time_hr - (0.5 * (sunrise_time + sunset_time))
+        half_duration = 0.5*(sunset_time - sunrise_time)
+        radiation = 850.0 * (1 - (x * x / (half_duration * half_duration)));
+        radiation = np.clip(radiation, 0, max_radiation)
+
+    else: # no radiation
+        print(f"No radiation load because sunrise_time = {sunrise_time}, sunset_time = {sunset_time}")
+        radiation = np.zeros_like(time_s)
 
     return time_s, radiation
 
