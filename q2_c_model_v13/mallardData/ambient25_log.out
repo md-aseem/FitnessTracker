@@ -1,0 +1,40 @@
+
+   *** Running Q3 Simulator ***
+
+  *** SETUP ***
+
+  No input file for current was found, a hard-coded current profile will be used
+
+
+  *** RUNNING *** 
+
+  0.033 hours:  Entering Standby mode
+
+ 10.095 hours:  Entering Cooling Mode because BATTERY_INLET_TEMP > B_COOLANT_TARGET      -->  296.151 > 296.150
+ 17.831 hours:  Leaving  Cooling Mode because TECLAST < (B_COOLANT_TARGET - TWO)         -->  293.150 < 294.150
+                                     
+ 17.831 hours:  Entering Standby mode
+
+
+ *** RUN SUMMARY ***
+
+ AVERAGE AMBIENT TEMPERATURE:       25.00 degrees C
+
+ BATTERY HEAT GENERATED:           225.17 kW*hrs
+ HEAT EXCHANGE WITH AMBIENT AIR:    24.31 kW*hrs
+ RADIATION HEAT LOAD:               49.35 kW*hrs
+
+ AUX ENERGY USED:                  118.81 kW*hrs
+   OPERATING AUX:                   58.34 kW*hrs
+     RESTING AUX:                   48.81 kW*hrs
+      IDLING AUX:                   11.66 kW*hrs
+
+   CHILLER AUX:                    110.61 kW*hrs   (2.26 Chiller COP)
+   HVAC AUX:                         0.00 kW*hrs
+   DEHUMIDIFIER AUX:                 1.00 kW*hrs
+   AUX LOAD  1:                      7.20 kW*hrs
+
+ INITIAL SOH:                      100.00
+ END-OF-YEAR SOH (directional):     94.68
+
+

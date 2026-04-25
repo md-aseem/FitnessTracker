@@ -1,0 +1,37 @@
+
+
+
+@FIXED_AMBIENT_TEMPERATURE_C{ 40.0 }
+
+@INITIAL_BATTERY_TEMPERATURE_C{ 20.0 }
+
+#@MAX_CHARGE_RATE{ 0.44 }
+#@MAX_DISCHARGE_RATE{ 0.50 }
+
+@MAX_CHARGE_RATE{ 0.23 }
+@MAX_DISCHARGE_RATE{ 0.25 }
+
+@BATTERY_MODEL{ catl_306Ahr }                # eve_306Ahr         or  catl_306Ahr
+@BATTERY_CONDITION{ end_of_life }            # end_of_life        or  beginning_of_life
+
+
+#@CHILLER_MODEL{ envicool_55kW_c/2 }         # envicool_55kW_c/4  or envicool_55kW_c/2   or  
+@CHILLER_MODEL{ bergstrom_55kW_c/2 }         # envicool_55kW_c/4  or envicool_55kW_c/2   or  
+                                             # bergstrom_55kW_c/4 or bergstrom_55kW_c/2
+@CHILLER_NOISE_KIT{ no  }                    # yes                or no
+@HVAC_PRESENT{ no }                          # yes                or no
+
+@INITIAL_STATE_OF_CHARGE{ 0.01 }
+#@POWER_TIME_HISTORY_FILE{ powerProfile.in }
+
+
+#@CYCLE{START_TIME   GO_TO_SOC   WAIT_TIME   GO_TO_SOC}
+@CYCLE{    8.0     ,   0.95    ,    1.0    ,   0.70 }
+#@CYCLE{    16.0    ,   0.98    ,    1.0    ,   0.05 }
+
+
+
+#@SUNRISE_TIME{ 7.0 }
+#@SUNSET_TIME{ 19.0 }
+
+
