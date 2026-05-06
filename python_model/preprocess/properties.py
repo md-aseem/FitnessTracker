@@ -31,6 +31,20 @@ class InputConfig(BaseModel):
     # Custom Profile
     custom_power_profile_path: str = None
 
+    hvac_present: bool = False
+    cycles: list = []
+
+    # setpoints
+    chiller_setpoint: float
+    battery_cool_target: float
+    battery_cool_min: float
+    battery_cool_exit: float
+    b_coolant_target: float
+
+    battery_heat_min: float
+    battery_heat_target: float
+    battery_heat_max: float
+    battery_heat_exit: float
 
 ### module specs
 @dataclass
@@ -89,6 +103,12 @@ class ChillerSpecs:
     pump_aux_cap: float
     comp_aux_cap: float
     cooling_power_coef: float
+
+    # constants
+    circulation_time_limit: float
+    temp_stable: float
+    heater_heat: float
+    bat_volume_flow_rate_lpm: float
 
     def __post_init__(self):
         self.combined_cap = 0.7 * self.comp_aux_cap + 0.15 * self.pump_aux_cap + 0.15 # ac in c-code
@@ -149,6 +169,7 @@ class SystemSpecs:
     container_specs: ContainerSpecs
     steel_wall_specs: WallSpecs # wall 1
     insulation_wall_specs: WallSpecs # wall 2
+    hvac_present: bool = False
 
 
 ### Solver specs

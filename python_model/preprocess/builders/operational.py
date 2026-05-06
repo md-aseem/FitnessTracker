@@ -3,6 +3,7 @@ from pathlib import Path
 from python_model.preprocess.properties import OperationalSpecs
 from python_model.preprocess.loaders import load_input_config, load_library_data
 from python_model.preprocess.profiles import generate_power_profiles_for_a_day, generate_ambient_temp_profile_for_a_day, process_custom_power_profile
+from python_model.preprocess.profiles.power import generate_power_profiles_from_cycles
 from python_model.preprocess.profiles.radiation import generate_radiation_load_for_a_day
 from python_model.preprocess.builders.battery import build_battery_specs
 
@@ -18,7 +19,7 @@ def load_operation_specs() -> OperationalSpecs:
     n_cycles = input_config.n_cycles
     
     battery_capacity_ah = batt_specs.cell_capacity_ah
-    battery_energy = battery_capacity_ah * 3.2 # 3.2 is nominal voltage (Cell Energy)
+    battery_energy = batt_specs.total_energy / batt_specs.n_cells
     dt = 0.25
 
     # User requested to always start with charge (StateMachine handles full battery case)
@@ -40,6 +41,17 @@ def load_operation_specs() -> OperationalSpecs:
         time_s, soc, current, power_watts = process_custom_power_profile(
             custom_time=df['time'].values,
             custom_power=df['power'].values,
+            ocv_curve=batt_specs.ocv_df,
+            battery_capacity_ah=battery_capacity_ah,
+            soc_init=input_config.soc_init,
+            dt=dt
+        )
+    elif input_config.cycles:
+        time_s, soc, current, power_watts = generate_power_profiles_from_cycles(
+            cycles=input_config.cycles,
+            charge_rate=charge_rate,
+            discharge_rate=discharge_rate,
+            total_energy=battery_energy,
             ocv_curve=batt_specs.ocv_df,
             battery_capacity_ah=battery_capacity_ah,
             soc_init=input_config.soc_init,

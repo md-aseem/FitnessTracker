@@ -163,6 +163,119 @@ def process_custom_power_profile(custom_time: np.ndarray,
     return time_s, soc, current, power_watts
 
 
+def generate_power_profiles_from_cycles(cycles: list,
+                                        charge_rate: float,
+                                        discharge_rate: float,
+                                        total_energy: float,
+                                        ocv_curve: pd.DataFrame,
+                                        battery_capacity_ah: float,
+                                        soc_init: float,
+                                        dt: float = 1.0
+                                        ):
+    SECONDS_IN_DAY = 86400
+    total_steps = int(SECONDS_IN_DAY / dt) + 1
+    
+    time_s = np.arange(total_steps) * dt
+    power = np.zeros(total_steps)
+    current = np.zeros(total_steps)
+    soc = np.zeros(total_steps)
+    soc[0] = soc_init
+    
+    ocv_soc_vals = ocv_curve.iloc[:, 0].values
+    ocv_voltage_vals = ocv_curve.iloc[:, 1].values
+    def get_voltage(s):
+        v = np.interp(s, ocv_soc_vals, ocv_voltage_vals)
+        return max(1.0, v)
+
+    current_cycle_idx = 0
+    phase = 0 # 0=wait for start, 1=goto soc1, 2=wait_time, 3=goto soc2, 4=done with cycle
+    timer = 0.0
+
+    for i in range(1, total_steps):
+        t = time_s[i]
+        soc[i] = soc[i-1] # default rest
+        power[i] = 0.0
+        current[i] = 0.0
+        
+        if current_cycle_idx < len(cycles):
+            cyc = cycles[current_cycle_idx]
+            start_time_s = cyc['start_time'] * 3600
+            target_soc1 = cyc['target_soc1']
+            wait_time_s = cyc['wait_time'] * 3600
+            target_soc2 = cyc['target_soc2']
+            
+            if phase == 0:
+                if t >= start_time_s:
+                    phase = 1
+            
+            if phase == 1:
+                # Go to target_soc1
+                diff = target_soc1 - soc[i-1]
+                if abs(diff) < 0.0001:
+                    phase = 2
+                    timer = 0.0
+                else:
+                    is_charge = diff > 0
+                    rate = charge_rate if is_charge else -discharge_rate
+                    current_power = rate * total_energy
+                    v = get_voltage(soc[i-1])
+                    current_current = current_power / v
+                    
+                    # C model updates SOC based on power (assuming constant nominal voltage), not actual current
+                    dsoc = current_power * dt / (total_energy * 3600)
+                    
+                    if is_charge and soc[i-1] + dsoc >= target_soc1:
+                        dsoc = target_soc1 - soc[i-1]
+                        current_power = dsoc * total_energy * 3600 / dt
+                        current_current = current_power / v
+                    elif not is_charge and soc[i-1] + dsoc <= target_soc1:
+                        dsoc = target_soc1 - soc[i-1]
+                        current_power = dsoc * total_energy * 3600 / dt
+                        current_current = current_power / v
+                    
+                    soc[i] = soc[i-1] + dsoc
+                    power[i] = current_power
+                    current[i] = current_current
+                    
+            if phase == 2:
+                timer += dt
+                if timer >= wait_time_s:
+                    phase = 3
+                    
+            if phase == 3:
+                # Go to target_soc2
+                diff = target_soc2 - soc[i-1]
+                if abs(diff) < 0.0001:
+                    phase = 4
+                else:
+                    is_charge = diff > 0
+                    rate = charge_rate if is_charge else -discharge_rate
+                    current_power = rate * total_energy
+                    v = get_voltage(soc[i-1])
+                    current_current = current_power / v
+                    
+                    # C model updates SOC based on power
+                    dsoc = current_power * dt / (total_energy * 3600)
+                    
+                    if is_charge and soc[i-1] + dsoc >= target_soc2:
+                        dsoc = target_soc2 - soc[i-1]
+                        current_power = dsoc * total_energy * 3600 / dt
+                        current_current = current_power / v
+                    elif not is_charge and soc[i-1] + dsoc <= target_soc2:
+                        dsoc = target_soc2 - soc[i-1]
+                        current_power = dsoc * total_energy * 3600 / dt
+                        current_current = current_power / v
+                        
+                    soc[i] = soc[i-1] + dsoc
+                    power[i] = current_power
+                    current[i] = current_current
+            
+            if phase == 4:
+                current_cycle_idx += 1
+                phase = 0
+                
+    return time_s, soc, current, power
+
 if __name__ == "__main__":
     
     ocv_curve = pd.DataFrame({

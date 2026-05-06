@@ -2,6 +2,7 @@
 from python_model.preprocess.builders import load_operation_specs
 from python_model.preprocess.properties import SystemSpecs, OperationalSpecs
 from python_model.preprocess.builders.system import build_system_specs
+import os
 import numpy as np
 from scipy.interpolate import RegularGridInterpolator
 from tqdm import tqdm
@@ -19,24 +20,6 @@ class Simulation:
     COOL_MODE = 1
     HEAT_MODE = 2
     CIRCULATE_MODE = 3
-    
-    # Thresholds (Hardcoded from C model for now)
-    BATTERY_COOL_TARGET = 298.15 # 25 C
-    BATTERY_COOL_MIN = 292.65 # 19.5 C
-    BATTERY_COOL_EXIT = 295.15 # 22 C
-    B_COOLANT_TARGET = 296.15 # 23 C
-    
-    BATTERY_HEAT_MIN = 288.15 # 15 C
-    BATTERY_HEAT_TARGET = 291.15 # 18 C
-    BATTERY_HEAT_MAX = 295.15 # 22 C
-    BATTERY_HEAT_EXIT = 290.65 # 17.5 C
-    
-    CIRCULATION_TIME_LIMIT = 120.0 # seconds
-    TEMP_STBL = 3.0 # Stability threshold
-    
-    HEATER_HEAT = 18000 # Watts? Checking C code implies this variable exists or is constant
-
-    BAT_VOLUME_FLOW_RATE_LPM = 480.0
 
     def __init__(self, system_specs: SystemSpecs, operational_specs: OperationalSpecs):
         self.system_specs = system_specs
@@ -108,14 +91,7 @@ class Simulation:
         self.battery_stream_mass_flow = 0.0
         
         # HVAC & Dehumidifier
-        self.hvac_air_temp = np.full([self.n], initial_batt_temp) # ACC internal air temp? Or is it same as internal? 
-        # In C, Hvac struct has 'airTemp'. The simulation uses 'internalAirTemp'. 
-        # The C code updates 'h->airTemp' separately in 'updateHvacConditionAndCool'.
-        # But 'updateControlState' checks 'internalAirTemp' usually? 
-        # Actually C code 'updateHvacConditionAndCool' updates 'h->airTemp' based on ambient and heat load.
-        # It seems detached from main internal air in C snippet provided? 
-        # Wait, 'simmain->internalAirTemp' is used in 'calculateAmbientHeatLoadAndInternalAirTemp'.
-        # I will keep them separate as per C structure for now.
+        self.hvac_air_temp = np.full([self.n], initial_batt_temp) # ACC internal air temp? Or is it same as internal?
         
         self.hvac_cooling_power = np.zeros([self.n])
         self.hvac_aux_power = np.zeros([self.n])
@@ -308,7 +284,7 @@ class Simulation:
         # Connected to Chiller/Coolant state
         # Using values from control logic
         # 480 LPM max * pump percent
-        volume_flow_rate_lpm = self.BAT_VOLUME_FLOW_RATE_LPM * self.battery_pump_pcnt[i]
+        volume_flow_rate_lpm = self.system_specs.chiller_specs['bat_volume_flow_rate_lpm'] * self.battery_pump_pcnt[i]
         
         if volume_flow_rate_lpm < 0.1:
             coolant_mass_flow = 0.001
@@ -318,7 +294,7 @@ class Simulation:
         coolant_cp = 3400.0 # J/kgK
         
         # Temp leaving chiller (entering cold plate)
-        tlc_last = self.battery_stream_temp_leaving_chiller[i] # This comes from update_chiller_condition_and_cool
+        tlc_last = self.battery_stream_temp_leaving_chiller[i-1]
         
         # Max Enthalpy Delta
         # maxEnthalpyDelta = c->batteryStream->massFlowRate*c->batteryStream->coolantCp*(b->tempLast[0] - c->batteryStream->tlcLast);
@@ -329,7 +305,7 @@ class Simulation:
         bottom_q = -0.4 * max_possible_heat_transfer + (self.battery_temp[i-1, 1] - self.battery_temp[i-1, 0]) * b_specs.R[1]
         
         # topQ    = (simmain->internalAirTemp - b->tempLast[6])*R[2] + (b->tempLast[5] - b->tempLast[6])*R[1];
-        top_q = (self.internal_air_temp[i-1] - self.battery_temp[i-1, 6]) * b_specs.R[2] + \
+        top_q = (self.internal_air_temp[i] - self.battery_temp[i-1, 6]) * b_specs.R[2] + \
                 (self.battery_temp[i-1, 5] - self.battery_temp[i-1, 6]) * b_specs.R[1]
                 
         # Heat into Chiller (for next step calculation of chiller return temp)
@@ -404,29 +380,29 @@ class Simulation:
 
     # --- Control Logic Methods ---
 
-    def update_control_state(self, i):
-        # Check for circulation pump triggers (equivalent to setPumpCirculation in C)
-        
-        # 1. Check if circulation timer is active
-        if self.circ_run_timer < self.CIRCULATION_TIME_LIMIT:
-             self.circ_run_timer += self.dt
-             
-             # Force circulation settings
-             self._set_circulate_values(i)
-             
-             # In C, it returns 1 (true) to skip the rest of control logic
-             return
+    def _set_pump_circulation(self, i):
+        """Equivalent to C's setPumpCirculation().
+        Returns True if timer is still active (caller should return early).
+        """
+        if self.circ_run_timer < self.system_specs.chiller_specs['circulation_time_limit']:
+            self.circ_run_timer += self.dt
+            self.battery_pump_pcnt[i] = 0.40
+            return True  # Early exit signal
+        return False
 
-        # Regular Control Logic
+    def update_control_state(self, i):
+        # C's updateControlState has no top-level circ timer check.
+        # setPumpCirculation is called inside each mode function.
         bat_min_temp = np.min(self.battery_temp[i-1])
         bat_max_temp = np.max(self.battery_temp[i-1])
-        tlc_last = self.battery_stream_temp_leaving_chiller[i-1]
+        # C uses tecLast (temp ENTERING chiller from prev step) for cooling entry/exit triggers
+        tec_last = self.battery_stream_temp_entering_chiller[i-1]
         
-        # Cooling Triggers
-        if self.chiller_mode == self.COOL_MODE or tlc_last > self.B_COOLANT_TARGET:
+        # Cooling Triggers (C: c->batteryStream->tecLast > B_COOLANT_TARGET)
+        if self.chiller_mode == self.COOL_MODE or tec_last > self.B_COOLANT_TARGET:
             self.cooling_mode(i)
             
-        # Heating Triggers (Priority Check: Heating overrides Cooling if both met? C code does sequential checks)
+        # Heating Triggers
         if self.chiller_mode == self.HEAT_MODE or \
            bat_max_temp < self.BATTERY_HEAT_MIN or \
            bat_min_temp < self.BATTERY_HEAT_TARGET:
@@ -441,8 +417,21 @@ class Simulation:
             self.standby_mode(i)
 
     def cooling_mode(self, i):
+        # If coming from standby, reset circulation timer (C line 618)
+        if self.chiller_mode == self.STANDBY_MODE:
+            self.came_from_standby = True
+            self.circ_run_timer = 0.0
+
         self.chiller_mode = self.COOL_MODE
-        
+
+        # setPumpCirculation equivalent (C line 626): pump warmup, early return
+        if self._set_pump_circulation(i):
+            # Still check if we should exit cooling even during warmup
+            tec_last = self.battery_stream_temp_entering_chiller[i-1]
+            if tec_last < (self.B_COOLANT_TARGET - 3.0):
+                self.standby_or_circulate(i)
+            return
+
         # Determine Demand
         # Control Scheme 2: Envicool Base Control Scheme
         # bDemand = (b->temperature[6] - (BATTERY_COOL_MIN + ONE)) / bSensitivity;
@@ -455,9 +444,6 @@ class Simulation:
         b_demand = (b_temp_top - (self.BATTERY_COOL_MIN + 1.0)) / sensitivity
         
         # Compressor Control
-        # if((bDemand >= 0.30) && (c->bTurnedOn == NO))
-        # Logic from C: c->compressorPcnt  = (bDemand > ONE) ? ONE : ((bDemand < 0.30) ? 0.30 : bDemand);
-        
         if b_demand >= 0.30 and not self.b_turned_on:
              self.compressor_pcnt[i] = np.clip(b_demand, 0.30, 1.0) * cooling_power_coef
              self.compressor_on_off = self.ON
@@ -476,22 +462,20 @@ class Simulation:
              self.b_turned_on = False
              
         else:
-             # Default if not turned on and demand low
              self.compressor_pcnt[i] = 0.0
              self.compressor_on_off = self.OFF
              self.battery_pump_pcnt[i] = 0.01
 
         # Fans
-        if self.b_turned_on: # or other checks
+        if self.b_turned_on:
             self.fan_pcnt[i] = 0.80
             self.fans_on_off = self.ON
         else:
             self.fan_pcnt[i] = 0.0
             self.fans_on_off = self.OFF
             
-        # Leave Cooling Mode Check
+        # Leave Cooling Mode Check (C: c->batteryStream->tecLast < (B_COOLANT_TARGET - 3.0))
         tec_last = self.battery_stream_temp_entering_chiller[i-1]
-        
         if tec_last < (self.B_COOLANT_TARGET - 3.0):
              self.standby_or_circulate(i)
 
@@ -508,6 +492,9 @@ class Simulation:
                self.standby_or_circulate(i)
 
     def circulate_mode(self, i):
+        # C's circulateMode calls setPumpCirculation first (C line 766)
+        if self._set_pump_circulation(i):
+            return
         self._set_circulate_values(i)
         self.standby_or_circulate(i)
 
@@ -528,14 +515,17 @@ class Simulation:
         self.standby_or_circulate(i)
 
     def standby_or_circulate(self, i):
-        bat_max_temp = np.max(self.battery_temp[i-1])
-        bat_min_temp = np.min(self.battery_temp[i-1])
+        # C macros: BATTERY_MAX_TEMP = b->temperature[6], BATTERY_MIN_TEMP = b->temperature[6]
+        # So abs(MAX - MIN) = 0, which is always < TEMP_STBL (3.0)
+        # => standbyOrCirculate always goes to STANDBY_MODE in the C model
+        bat_max_temp = self.battery_temp[i-1, 6]
+        bat_min_temp = self.battery_temp[i-1, 6]  # Same node as max — always 0 diff
         
-        if abs(bat_max_temp - bat_min_temp) > self.TEMP_STBL:
+        if abs(bat_max_temp - bat_min_temp) > self.system_specs.chiller_specs['temp_stable']:
              self.chiller_mode = self.CIRCULATE_MODE
              self.circ_run_timer = 0.0
         else:
-             self.circ_run_timer = self.CIRCULATION_TIME_LIMIT + 1.0 # Expire timer
+             self.circ_run_timer = self.system_specs.chiller_specs['circulation_time_limit'] + 1.0  # Expire timer
              self.chiller_mode = self.STANDBY_MODE
 
     def update_chiller_condition_and_cool(self, i):
@@ -546,7 +536,7 @@ class Simulation:
         BASE_COLD_SIDE_TEMPERATURE = 292.15
         
         if self.compressor_on_off == self.ON:
-            ambient = self.ambient_temp_profile[i]
+            ambient = self.ambient_temp_profile[i] - 273.15  # Convert K -> °C for chiller curve lookup
             
             c18 = C_COEFF * self.get_chiller_cooling_power(ambient, 18)
             c23 = C_COEFF * self.get_chiller_cooling_power(ambient, 23)
@@ -588,7 +578,7 @@ class Simulation:
         
         max_enthalpy_delta = self.battery_stream_mass_flow * coolant_cp * (self.battery_cold_side_temp - tec_last)
         
-        heater_heat = self.heater_pcnt[i] * self.HEATER_HEAT
+        heater_heat = self.heater_pcnt[i] * self.system_specs.chiller_specs['heater_heat']
         
         self.battery_stream_temp_leaving_chiller[i] = tec_last + \
             (heater_heat + 0.7 * max_enthalpy_delta) / (self.battery_stream_mass_flow * coolant_cp)
@@ -607,6 +597,12 @@ class Simulation:
         # Update hvac_air_temp
         # h->airTemp += (((simmain->ambientTemperature - h->airTemp)*10.0 + componentHeatLoad)/(30.0*1500.0))*transientDt;
         
+        if not self.system_specs.hvac_present:
+            self.hvac_air_temp[i] = self.hvac_air_temp[i-1]
+            self.hvac_aux_power[i] = 0.0
+            self.hvac_cooling_power[i] = 0.0
+            return
+
         h_air_temp = self.hvac_air_temp[i-1]
         ambient = self.ambient_temp_profile[i]
         
@@ -719,6 +715,7 @@ class Simulation:
         self.idling_aux_energy = np.sum(total_instant_power[is_idling]) * self.dt
         self.time_spent_idling = np.sum(is_idling) * self.dt
         self.batt_ave_temp_not_operating += np.sum(bat_temp_top[is_idling]) * self.dt
+        self.peak_aux_power = np.max(total_instant_power)
 
 
     def plot_results(self):
@@ -767,7 +764,7 @@ class Simulation:
         print("Plot saved to simulation_results.png")
         # plt.show() # Commented out to prevent blocking in headless env, uncomment to see plot
 
-    def save_results_to_csv(self):
+    def save_results_to_csv(self, filename='results/python_simulation_results.csv'):
         df = pd.DataFrame({
             'time_s': self.time_s,
             'battery_top_temp_c': self.battery_temp[:, 6] - 273.15,
@@ -778,10 +775,13 @@ class Simulation:
             'total_aux_power_w': self.total_aux_power,
             'chiller_mode': self.chiller_mode_history,
             'compressor_pct': self.compressor_pcnt,
-            'cell_heat': self.cell_heat_gen_profile
+            'cell_heat': self.cell_heat_gen_profile,
+            'batt_coolant_temp_leaving_chiller': self.battery_stream_temp_leaving_chiller,
+            'batt_coolant_temp_entering_chiller': self.battery_stream_temp_entering_chiller,
         })
-        df.to_csv('results/python_simulation_results.csv', index=False)
-        print("Results saved to python_simulation_results.csv")
+        os.makedirs(os.path.dirname(filename), exist_ok=True)
+        df.to_csv(filename, index=False)
+        print(f"Results saved to {filename}")
 
 if __name__ == "__main__":
     system_specs = build_system_specs()

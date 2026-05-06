@@ -18,6 +18,7 @@ def build_system_specs() -> SystemSpecs:
                                chiller_specs=chiller_specs,
                                container_specs=container_specs,
                                steel_wall_specs=steel_wall_specs,
-                               insulation_wall_specs=insulation_wall_specs)
+                               insulation_wall_specs=insulation_wall_specs,
+                               hvac_present=input_config.hvac_present)
 
     return system_specs

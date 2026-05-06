@@ -1,8 +1,12 @@
+import os
 import yaml
 from pathlib import Path
 from python_model.preprocess.properties import InputConfig
 
 def load_input_config(path: str = None) -> InputConfig:
+    if path is None:
+        path = os.environ.get('QUANTUM_INPUT_PATH')
+    
     if path is None:
         path = Path(__file__).parent.parent / "input.yaml"
     

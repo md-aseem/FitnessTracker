@@ -46,6 +46,36 @@ chillers:
     comp_aux_cap: 0.95
     cooling_power_coef: 1
 
+  bergstrom_55kw_c/2:
+    chiller_curves_dir: data/chiller_performance/quantum_2p0
+    battery_sensitivity: 3.0
+    inverter_sensitivity: 30.0
+
+    # things that matter
+    pump_aux_cap: 0.93
+    comp_aux_cap: 0.95
+    cooling_power_coef: 1
+
+  bergstrom_55kw_c/4:
+    chiller_curves_dir: data/chiller_performance/quantum_2p0
+    battery_sensitivity: 3.0
+    inverter_sensitivity: 30.0
+
+    # things that matter
+    pump_aux_cap: 0.52
+    comp_aux_cap: 0.71
+    cooling_power_coef: 0.818
+
+  bergstrom_55kw_c/8:
+    chiller_curves_dir: data/chiller_performance/quantum_2p0
+    battery_sensitivity: 3.0
+    inverter_sensitivity: 30.0
+
+    # things that matter
+    pump_aux_cap: 0.52
+    comp_aux_cap: 0.50
+    cooling_power_coef: 0.55
+
 
 containers:
   quantum_1p0:
@@ -72,9 +102,13 @@ containers:
   quantum_3p0:
     container_wall_area: 71.91 # m^2
 
-
 hvac:
   UA: 2.0
   temperature_target: 40 # Question: should it be here?
   hysteresis: 20.0 # Question: why?
 
+# constants
+circulation_time_limit: 120.0 # seconds
+temp_stable: 3.0 # Stability threshold
+heater_heat: 18000 # Watts? Checking C code implies this variable exists or is constant
+bat_volume_flow_rate_lpm: 480.0

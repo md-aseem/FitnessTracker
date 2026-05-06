@@ -1,1 +1,0 @@
-g++ main.c struct_ops.c parser.c housekeeping.c batteryHeat.c transientSolver.c -o q2_transient_model
