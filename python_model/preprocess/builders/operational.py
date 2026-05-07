@@ -28,20 +28,15 @@ def load_operation_specs() -> OperationalSpecs:
     if input_config.custom_power_profile_path:
         # Load Custom Profile
         profile_path = Path(input_config.custom_power_profile_path)
-        if not profile_path.exists():
-            # Try finding it relative to project root? Or assume absolute/cwd?
-            # Raise error for now if not found
-             raise FileNotFoundError(f"Custom profile not found: {profile_path}")
-             
         df = pd.read_csv(profile_path)
         # Expected columns: 'time' (s), 'power' (W)
         if 'time' not in df.columns or 'power' not in df.columns:
              raise ValueError(f"Custom profile must have 'time' and 'power' columns. Found: {df.columns}")
-             
+
         time_s, soc, current, power_watts = process_custom_power_profile(
             custom_time=df['time'].values,
             custom_power=df['power'].values,
-            ocv_curve=batt_specs.ocv_df,
+            ocv_df=batt_specs.ocv_df,
             battery_capacity_ah=battery_capacity_ah,
             soc_init=input_config.soc_init,
             dt=dt

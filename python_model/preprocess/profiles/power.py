@@ -97,7 +97,7 @@ def generate_power_profiles_for_a_day(charge_rate: float,
 
 def process_custom_power_profile(custom_time: np.ndarray,
                                  custom_power: np.ndarray,
-                                 ocv_curve: pd.DataFrame,
+                                 ocv_df: pd.DataFrame,
                                  battery_capacity_ah: float,
                                  soc_init: float,
                                  dt: float = 1.0
@@ -126,23 +126,22 @@ def process_custom_power_profile(custom_time: np.ndarray,
     soc[0] = soc_init
     
     # OCV Interp Helpers
-    ocv_soc_vals = ocv_curve.iloc[:, 0].values
-    ocv_voltage_vals = ocv_curve.iloc[:, 1].values
+    ocv_soc_vals = ocv_df['soc'].values
+    ocv_voltage_vals = ocv_df['ocv'].values
     
-    def get_voltage(s):
-        v = np.interp(s, ocv_soc_vals, ocv_voltage_vals)
-        return max(1.0, v)
-        
-    for i in range(total_steps):
-        
+    def get_voltage(soc, current):
+        ocv = np.interp(soc, ocv_soc_vals, ocv_voltage_vals)
+        v = ocv + current * 0.0004 # assuming the resistance is constant to 0.4 mOhm
+        # v = ocv + current * 0      # assuming the resistance is constant to zero for validation
+        return max(2.5, v)
+
+    for i in range(1, total_steps-1):
+
         # Setup Current SOC
-        if i > 0:
-            current_soc = soc[i-1]
-        else:
-            current_soc = soc_init
+        current_soc = soc[i-1]
             
         # Get Voltage & Current
-        v = get_voltage(current_soc)
+        v = get_voltage(soc[i-1], current[i-1])
         
         # I = P / V
         # If P is provided, I is result.
@@ -150,15 +149,14 @@ def process_custom_power_profile(custom_time: np.ndarray,
         current[i] = i_val
         
         # Update SOC for next step
-        if i < total_steps - 1:
-            # dSOC = - I * dt / Cap
-            d_ah = -(i_val * dt / 3600.0)
-            new_soc = current_soc + (d_ah / battery_capacity_ah)
-            
-            # Clamp SOC
-            new_soc = max(0.0, min(1.0, new_soc))
-            
-            soc[i+1] = new_soc
+        # dSOC = - I * dt / Cap
+        d_ah = -(i_val * dt / 3600.0)
+        new_soc = current_soc + (d_ah / battery_capacity_ah)
+
+        # Clamp SOC
+        new_soc = max(0.0, min(1.0, new_soc))
+
+        soc[i] = new_soc
             
     return time_s, soc, current, power_watts
 
