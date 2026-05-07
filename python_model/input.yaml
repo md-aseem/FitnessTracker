@@ -24,7 +24,7 @@ initial_battery_temp: 20
 soh_init: 1
 battery_temp_init: 20
 
-custom_power_profile_path: ""
+custom_power_profile_path: "/Users/mas985/code/quantum-thermal-model/python_model/custom_power_profile.csv"
 
 hvac_present: False
 
