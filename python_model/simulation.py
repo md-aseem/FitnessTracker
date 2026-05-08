@@ -590,16 +590,12 @@ class Simulation:
         h_air_temp = self.hvac_air_temp[i-1]
         ambient = self.ambient_temp_profile[i]
         
-        # Component Heat Load (from current)
-        # if(simmain->current >  0.1)  componentHeatLoad = 5000.0*(simmain->current/150.0);
+        # Component Heat Load
         current = self.current_profile[i]
-        component_heat_load = 0.0
-        if current > 0.1:
-            component_heat_load = 5000.0 * (current / 150.0)
-        elif current < -0.1:
-            component_heat_load = 5000.0 * (-current / 150.0)
-            
-        h_air_temp += (((ambient - h_air_temp) * 10.0 + component_heat_load) / (30.0 * 1500.0)) * self.dt
+        component_heat_load = 5000.0 * (abs(current) / 150.0) # heat load is proportional to the current
+
+        G = 10
+        h_air_temp += (((ambient - h_air_temp) * G + component_heat_load) / (30.0 * 1500.0)) * self.dt
         
         # Hvac targets
         acc_target = 303.15 # 30C
@@ -611,14 +607,12 @@ class Simulation:
         if h_air_temp > (acc_target + hysteresis):
             aux_power = 1600.0
             cooling_power = 4000.0
-        elif h_air_temp < acc_target:
-            aux_power = 0.0
-            cooling_power = 0.0
         else:
             # Maintain previous state? Simplified to OFF for now if dropped below target in check above
             pass
             
         h_air_temp -= (cooling_power / (40.0 * 1500.0)) * self.dt
+        # todo: the mass is different in two lines. make it same after the validation.
         
         self.hvac_air_temp[i] = h_air_temp
         self.hvac_aux_power[i] = aux_power
