@@ -510,7 +510,7 @@ class Simulation:
         bat_max_temp = self.battery_temp[i-1, 6]
         bat_min_temp = self.battery_temp[i-1, 0]  # Same node as max — always 0 diff
         
-        if abs(bat_max_temp - bat_min_temp) > self.system_specs.chiller_specs['temp_stable']:
+        if abs(bat_max_temp - bat_min_temp) > self.system_specs.chiller_specs.temp_stable:
              self.chiller_mode = self.CIRCULATE_MODE
              self.circ_run_timer = 0.0
         else:
@@ -557,7 +557,7 @@ class Simulation:
         
         max_enthalpy_delta = self.battery_stream_mass_flow * coolant_cp * (self.refrigerant_temp[i] - self.chiller_inlet_temp[i - 1])
         
-        heater_heat = self.heater_pcnt[i] * self.system_specs.chiller_specs['heater_heat']
+        heater_heat = self.heater_pcnt[i] * self.system_specs.chiller_specs.heater_heat
         
         self.chiller_outlet_temp[i] = self.chiller_inlet_temp[i - 1] + \
                                       (heater_heat + 0.7 * max_enthalpy_delta) / (self.battery_stream_mass_flow * coolant_cp)
