@@ -537,21 +537,14 @@ class Simulation:
             # Heat into cold plate from previous step (negative value usually)
             hicp_last = self.heat_into_cold_plate[i-1]
             
-            # Logic from C:
-            # if(-b->hicpLast <= (C_COEFF*tableInterpolateCooling(ambientT,c->cooling18))) 
-            #    c->batteryColdSideTemp += (BASE_COLD_SIDE_TEMPERATURE - c->batteryColdSideTemp)*transientDt/(1.0*910.0);
+            # update refrigerant temp to slowly go to the chiller_setpoint with a time-constant of 910 seconds
             # this logic only works if the chiller_setpoint is 19C. we are setting it 19C and keeping the logic same for validation
             if -hicp_last <= c18:
                  target = self.system_specs.chiller_specs['chiller_setpoint'] + 273.15
                  self.refrigerant_temp[i] += (target - self.refrigerant_temp[i-1]) * self.dt / (1.0 * 910.0)
             else:
-                 # c->batteryColdSideTemp += ((BASE_COLD_SIDE_TEMPERATURE + (-b->hicpLast - c18)*5.0/(c23-c18)) - c->batteryColdSideTemp)*transientDt/(1.0*910.0);
-                 if abs(c23 - c18) < 1e-6: # Avoid div by zero
-                     denom = 1.0
-                 else:
-                     denom = c23 - c18
-                     
-                 target = self.system_specs.chiller_specs['chiller_setpoint'] + 273.15 + (-hicp_last - c18) * 5.0 / denom
+                # if demand cannot be met, we update the target temperature
+                 target = self.system_specs.chiller_specs['chiller_setpoint'] + 273.15 + (-hicp_last - c18) * 5.0 / (c23 - c18)
                  self.refrigerant_temp[i] += (target - self.refrigerant_temp[i-1]) * self.dt / (1.0 * 910.0)
                  
         else:
