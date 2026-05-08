@@ -513,7 +513,7 @@ class Simulation:
         # So abs(MAX - MIN) = 0, which is always < TEMP_STBL (3.0)
         # => standbyOrCirculate always goes to STANDBY_MODE in the C model
         bat_max_temp = self.battery_temp[i-1, 6]
-        bat_min_temp = self.battery_temp[i-1, 6]  # Same node as max — always 0 diff
+        bat_min_temp = self.battery_temp[i-1, 0]  # Same node as max — always 0 diff
         
         if abs(bat_max_temp - bat_min_temp) > self.system_specs.chiller_specs['temp_stable']:
              self.chiller_mode = self.CIRCULATE_MODE
