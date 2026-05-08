@@ -496,6 +496,7 @@ class Simulation:
         self.battery_pump_pcnt[i] = 0.40
         self.b_turned_on = False
         self.fan_pcnt[i] = 0.0
+
         self.set_standby_or_circulate_mode(i)
 
     def standby_mode(self, i):
