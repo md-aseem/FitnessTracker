@@ -380,7 +380,7 @@ class Simulation:
 
     # --- Control Logic Methods ---
 
-    def _set_pump_circulation(self, i):
+    def _check_circulate_mode_timer(self, i):
         """Equivalent to C's setPumpCirculation().
         Returns True if timer is still active (caller should return early).
         """
@@ -391,8 +391,9 @@ class Simulation:
         return False
 
     def update_control_state(self, i):
-        # C's updateControlState has no top-level circ timer check.
-        # setPumpCirculation is called inside each mode function.
+        if self._check_circulate_mode_timer(i):
+            return
+
         bat_min_temp = np.min(self.battery_temp[i-1])
         bat_max_temp = np.max(self.battery_temp[i-1])
         # C uses tlcLast (temp Leaving chiller from prev step) for cooling entry/exit triggers
@@ -440,6 +441,8 @@ class Simulation:
             self.standby_mode(i)
 
     def cooling_mode(self, i):
+        if self._check_circulate_mode_timer(i):
+            return
 
         # Determine Demand
         # Control Scheme 2: Envicool Base Control Scheme
@@ -488,18 +491,12 @@ class Simulation:
         self.heater_pcnt[i] = 0.80
 
     def circulate_mode(self, i):
-        # C's circulateMode calls setPumpCirculation first (C line 766)
-        if self._set_pump_circulation(i):
-            return
-        self._set_circulate_values(i)
-        self.set_standby_or_circulate_mode(i)
-
-    def _set_circulate_values(self, i):
         self.compressor_pcnt[i] = 0.0
         self.compressor_on_off = self.OFF
         self.battery_pump_pcnt[i] = 0.40
         self.b_turned_on = False
         self.fan_pcnt[i] = 0.0
+        self.set_standby_or_circulate_mode(i)
 
     def standby_mode(self, i):
         self.compressor_pcnt[i] = 0.0
