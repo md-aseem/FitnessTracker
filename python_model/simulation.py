@@ -563,17 +563,15 @@ class Simulation:
         # maxEnthalpyDelta = m * cp * (T_cold_side - T_entering_last)
         # T_leaving = T_entering_last + (Heater + Sharing + 0.7 * maxEnthalpyDelta) / (m * cp)
         
-        tec_last = self.chiller_inlet_temp[i - 1]
-        
         self.battery_stream_mass_flow = self.calculate_battery_stream_mass_flow_rate(i)
 
         coolant_cp = 3400.0 # J/kgK
         
-        max_enthalpy_delta = self.battery_stream_mass_flow * coolant_cp * (self.battery_cold_side_temp - tec_last)
+        max_enthalpy_delta = self.battery_stream_mass_flow * coolant_cp * (self.battery_cold_side_temp - self.chiller_inlet_temp[i - 1])
         
         heater_heat = self.heater_pcnt[i] * self.system_specs.chiller_specs['heater_heat']
         
-        self.chiller_outlet_temp[i] = tec_last + \
+        self.chiller_outlet_temp[i] = self.chiller_inlet_temp[i - 1] + \
                                       (heater_heat + 0.7 * max_enthalpy_delta) / (self.battery_stream_mass_flow * coolant_cp)
 
 
