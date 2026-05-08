@@ -87,7 +87,7 @@ class Simulation:
         # Liquid Loop States
         self.chiller_outlet_temp = np.full([self.n], initial_batt_temp) # Start with battery temp
         self.chiller_inlet_temp = np.full([self.n], initial_batt_temp)
-        self.battery_cold_side_temp = initial_batt_temp # Internal variable for chiller
+        self.refrigerant_temp = np.full([self.n], initial_batt_temp) # Internal variable for chiller
         self.battery_stream_mass_flow = 0.0
         
         # HVAC & Dehumidifier
@@ -543,7 +543,7 @@ class Simulation:
             # this logic only works if the chiller_setpoint is 19C. we are setting it 19C and keeping the logic same for validation
             if -hicp_last <= c18:
                  target = self.system_specs.chiller_specs['chiller_setpoint'] + 273.15
-                 self.battery_cold_side_temp += (target - self.battery_cold_side_temp) * self.dt / (1.0 * 910.0)
+                 self.refrigerant_temp[i] += (target - self.refrigerant_temp[i-1]) * self.dt / (1.0 * 910.0)
             else:
                  # c->batteryColdSideTemp += ((BASE_COLD_SIDE_TEMPERATURE + (-b->hicpLast - c18)*5.0/(c23-c18)) - c->batteryColdSideTemp)*transientDt/(1.0*910.0);
                  if abs(c23 - c18) < 1e-6: # Avoid div by zero
@@ -552,12 +552,12 @@ class Simulation:
                      denom = c23 - c18
                      
                  target = self.system_specs.chiller_specs['chiller_setpoint'] + 273.15 + (-hicp_last - c18) * 5.0 / denom
-                 self.battery_cold_side_temp += (target - self.battery_cold_side_temp) * self.dt / (1.0 * 910.0)
+                 self.refrigerant_temp[i] += (target - self.refrigerant_temp[i-1]) * self.dt / (1.0 * 910.0)
                  
         else:
             # If off, set to temp entering chiller (from C: c->batteryColdSideTemp = c->batteryStream->tempEnteringChiller;)
             # Or simplified drift? The C code explicitly sets it to entering temp when off.
-            self.battery_cold_side_temp = self.chiller_inlet_temp[i - 1]
+            self.refrigerant_temp[i] = self.chiller_inlet_temp[i - 1]
             
         # 2. Battery Coolant Stream Calculation
         # maxEnthalpyDelta = m * cp * (T_cold_side - T_entering_last)
@@ -567,7 +567,7 @@ class Simulation:
 
         coolant_cp = 3400.0 # J/kgK
         
-        max_enthalpy_delta = self.battery_stream_mass_flow * coolant_cp * (self.battery_cold_side_temp - self.chiller_inlet_temp[i - 1])
+        max_enthalpy_delta = self.battery_stream_mass_flow * coolant_cp * (self.refrigerant_temp[i-1] - self.chiller_inlet_temp[i - 1])
         
         heater_heat = self.heater_pcnt[i] * self.system_specs.chiller_specs['heater_heat']
         
