@@ -647,7 +647,7 @@ class Simulation:
                            # In tabulate_aux_energy logic it seemed constant.
                            # Let's assume it applies at all steps for now or improve logic if needed.
                            
-        heater_power = self.heater_pcnt * 6000.0
+        heater_power = self.heater_pcnt * self.system_specs.chiller_specs['heater_heat']
         
         # PCS Logic
         # if chargeOrDischargeIsHappening { currentAuxPower = 100.0; }
