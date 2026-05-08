@@ -541,11 +541,11 @@ class Simulation:
             # this logic only works if the chiller_setpoint is 19C. we are setting it 19C and keeping the logic same for validation
             if -hicp_last <= c18:
                  target = self.system_specs.chiller_specs['chiller_setpoint'] + 273.15
-                 self.refrigerant_temp[i] += (target - self.refrigerant_temp[i-1]) * self.dt / (1.0 * 910.0)
+                 self.refrigerant_temp[i] = self.refrigerant_temp[i-1] + (target - self.refrigerant_temp[i-1]) * self.dt / (1.0 * 910.0)
             else:
                 # if demand cannot be met, we update the target temperature
                  target = self.system_specs.chiller_specs['chiller_setpoint'] + 273.15 + (-hicp_last - c18) * 5.0 / (c23 - c18)
-                 self.refrigerant_temp[i] += (target - self.refrigerant_temp[i-1]) * self.dt / (1.0 * 910.0)
+                 self.refrigerant_temp[i] = self.refrigerant_temp[i-1] + (target - self.refrigerant_temp[i-1]) * self.dt / (1.0 * 910.0)
                  
         else:
             # If off, set to temp entering chiller (from C: c->batteryColdSideTemp = c->batteryStream->tempEnteringChiller;)
