@@ -560,7 +560,7 @@ class Simulation:
 
         coolant_cp = 3400.0 # J/kgK
         
-        max_enthalpy_delta = self.battery_stream_mass_flow * coolant_cp * (self.refrigerant_temp[i-1] - self.chiller_inlet_temp[i - 1])
+        max_enthalpy_delta = self.battery_stream_mass_flow * coolant_cp * (self.refrigerant_temp[i] - self.chiller_inlet_temp[i - 1])
         
         heater_heat = self.heater_pcnt[i] * self.system_specs.chiller_specs['heater_heat']
         
