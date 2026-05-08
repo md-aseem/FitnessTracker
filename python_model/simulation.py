@@ -284,7 +284,7 @@ class Simulation:
         # Connected to Chiller/Coolant state
         # Using values from control logic
         # 480 LPM max * pump percent
-        volume_flow_rate_lpm = self.system_specs.chiller_specs['bat_volume_flow_rate_lpm'] * self.battery_pump_pcnt[i]
+        volume_flow_rate_lpm = self.system_specs.chiller_specs.bat_volume_flow_rate_lpm * self.battery_pump_pcnt[i]
         
         if volume_flow_rate_lpm < 0.1:
             coolant_mass_flow = 0.001
@@ -395,7 +395,7 @@ class Simulation:
         tlc_last = self.chiller_outlet_temp[i - 1]
         
         # Cooling Triggers
-        if tlc_last > self.system_specs.chiller_specs['b_coolant_target']:
+        if tlc_last > self.system_specs.setpoints.b_coolant_target:
             print(f"Entering cooling mode at {time[i]} because tlc>b_coolant_target")
             # if last mode was standby, we set came_from_standby and circulation timer
             if self.chiller_mode == self.STANDBY_MODE:
@@ -410,12 +410,12 @@ class Simulation:
             # Check exit conditions
             # Only leave cooling mode if chiller_inlet_temp is 3 less than the coolant_target
             tec_last = self.chiller_inlet_temp[i - 1]
-            if tec_last < (self.system_specs.chiller_specs['b_coolant_target'] - 3.0):
+            if tec_last < (self.system_specs.setpoints.b_coolant_target - 3.0):
                 self.set_standby_or_circulate_mode(i)
             
         # Heating Triggers
-        if bat_max_temp < self.system_specs.chiller_specs['battery_heat_min'] or \
-           bat_min_temp < self.system_specs.chiller_specs['battery_heat_target']:
+        if bat_max_temp < self.system_specs.setpoints.battery_heat_min or \
+           bat_min_temp < self.system_specs.setpoints.battery_heat_target:
              self.chiller_mode = self.HEAT_MODE
 
         # heating execution
@@ -423,8 +423,8 @@ class Simulation:
             self.heating_mode(i)
 
             # Leave Heating Mode Check
-            if bat_max_temp > self.system_specs.chiller_specs['battery_heat_max'] or \
-                    bat_min_temp > self.system_specs.chiller_specs['battery_heat_exit']:
+            if bat_max_temp > self.system_specs.setpoints.battery_heat_max or \
+                    bat_min_temp > self.system_specs.setpoints.battery_heat_exit:
                 self.set_standby_or_circulate_mode(i)
 
         # Circulation Mode
@@ -448,7 +448,7 @@ class Simulation:
 
         # Check top node temp (index 6)
         b_temp_top = self.battery_temp[i-1, 6]
-        b_demand = (b_temp_top - (self.system_specs.chiller_specs['battery_cool_min'] + 1.0)) / sensitivity
+        b_demand = (b_temp_top - (self.system_specs.setpoints.battery_cool_min + 1.0)) / sensitivity
         
         # Compressor Control
         if b_demand >= 0.30 and not self.b_turned_on:
@@ -535,11 +535,11 @@ class Simulation:
             # update refrigerant temp to slowly go to the chiller_setpoint with a time-constant of 910 seconds
             # this logic only works if the chiller_setpoint is 19C. we are setting it 19C and keeping the logic same for validation
             if -hicp_last <= c18:
-                 target = self.system_specs.chiller_specs['chiller_setpoint'] + 273.15
+                 target = self.system_specs.setpoints.chiller_setpoint + 273.15
                  self.refrigerant_temp[i] = self.refrigerant_temp[i-1] + (target - self.refrigerant_temp[i-1]) * self.dt / (1.0 * 910.0)
             else:
                 # if demand cannot be met, we update the target temperature
-                 target = self.system_specs.chiller_specs['chiller_setpoint'] + 273.15 + (-hicp_last - c18) * 5.0 / (c23 - c18)
+                 target = self.system_specs.setpoints.chiller_setpoint + 273.15 + (-hicp_last - c18) * 5.0 / (c23 - c18)
                  self.refrigerant_temp[i] = self.refrigerant_temp[i-1] + (target - self.refrigerant_temp[i-1]) * self.dt / (1.0 * 910.0)
                  
         else:

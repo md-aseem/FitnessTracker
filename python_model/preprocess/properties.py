@@ -160,6 +160,23 @@ class OperationalSpecs:
         self.dt = np.diff(self.time_s)[0]
 
 
+@dataclass
+class SetPoints:
+
+    chiller_setpoint: float
+
+    # cooling setpoints
+    battery_cool_target: float
+    battery_cool_min: float
+    battery_cool_exit: float
+    b_coolant_target: float
+
+    # heating setpoints
+    battery_heat_min: float
+    battery_heat_target: float
+    battery_heat_max: float
+    battery_heat_exit: float
+
 ### combined system specs
 @dataclass
 class SystemSpecs:
@@ -169,6 +186,7 @@ class SystemSpecs:
     container_specs: ContainerSpecs
     steel_wall_specs: WallSpecs # wall 1
     insulation_wall_specs: WallSpecs # wall 2
+    setpoints: SetPoints
     hvac_present: bool = False
 
 
