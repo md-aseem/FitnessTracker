@@ -350,12 +350,7 @@ class Simulation:
                                     ((1.0/7.0 * total_heat_gen) + flux_left + flux_right) * \
                                     self.dt / (b_specs.mass * b_specs.cp / 7.0)
 
-
-
-    def get_ocv(self, soc):
-        ocv_df = self.system_specs.battery_specs.ocv_df
-        # Assuming index 0 is SOC and index 1 is Voltage
-        return np.interp(soc, ocv_df.iloc[:, 0], ocv_df.iloc[:, 1])
+        return
 
     def calculate_battery_heat_generation(self):
         # Interpolate 2D: SOC and C-Rate
