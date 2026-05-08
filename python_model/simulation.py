@@ -379,7 +379,7 @@ class Simulation:
         """Equivalent to C's setPumpCirculation().
         Returns True if timer is still active (caller should return early).
         """
-        if self.circ_run_timer < self.system_specs.chiller_specs['circulation_time_limit']:
+        if self.circ_run_timer < self.system_specs.chiller_specs.circulation_time_limit:
             self.circ_run_timer += self.dt
             self.battery_pump_pcnt[i] = 0.40
             return True  # Early exit signal
