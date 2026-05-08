@@ -192,13 +192,13 @@ class Simulation:
     def calculate_ambient_heat_load_and_internal_air_temp(self, i):
 
         # Steel Wall Update
-        steel_flux_to_outer_node = (self.radiation_heat_load[i] +  # heat from radiation
+        heat_flux_to_outer_node_steel = (self.radiation_heat_load[i] +  # heat from radiation
                                     ((self.ambient_temp_profile[i] - self.steel_walls_temp[i-1, 6]) *
                                      self.steel_wall_specs.R[0]) +  # heat from ambient
                                     ((self.steel_walls_temp[i-1, 5] - self.steel_walls_temp[i-1, 6]) *
                                      self.steel_wall_specs.R[1]))  # heat from internal node
 
-        steel_flux_to_inner_node = (((self.internal_air_temp[i - 1] - self.steel_walls_temp[i - 1, 0]) *
+        heat_flux_to_inner_node_steel = (((self.internal_air_temp[i - 1] - self.steel_walls_temp[i - 1, 0]) *
                                      self.steel_wall_specs.R[2]) +  # heat from internal air
                                     (self.steel_walls_temp[i - 1, 1] - self.steel_walls_temp[i - 1, 0]) *
                                     self.steel_wall_specs.R[1]  # heat from internal node
@@ -209,9 +209,9 @@ class Simulation:
                                       self.steel_wall_specs.R[2]
         flux_to_inner_air_from_walls = -flux_from_air_to_steel_wall  # accumulators for air update
 
-        self.steel_walls_temp[i, 0] = (self.steel_walls_temp[i - 1, 0] + steel_flux_to_inner_node * self.dt /
+        self.steel_walls_temp[i, 0] = (self.steel_walls_temp[i - 1, 0] + heat_flux_to_inner_node_steel * self.dt /
                                        (self.steel_wall_specs.mass * self.steel_wall_specs.cp / 7))
-        self.steel_walls_temp[i, 6] = (self.steel_walls_temp[i - 1, 6] + steel_flux_to_outer_node * self.dt /
+        self.steel_walls_temp[i, 6] = (self.steel_walls_temp[i - 1, 6] + heat_flux_to_outer_node_steel * self.dt /
                                        (self.steel_wall_specs.mass * self.steel_wall_specs.cp / 7))
 
         # Vectorized Update for nodes 1-5
@@ -227,12 +227,12 @@ class Simulation:
                                         (self.steel_wall_specs.mass * self.steel_wall_specs.cp / 7)
 
         # Insulation Wall Update
-        insulation_flux_to_outer_node = (((self.ambient_temp_profile[i] - self.insulation_walls_temp[i-1, 6]) *
+        heat_flux_to_outer_node_insulation = (((self.ambient_temp_profile[i] - self.insulation_walls_temp[i-1, 6]) *
                                           self.insulation_wall_specs.R[0]) +
                                          ((self.insulation_walls_temp[i-1, 5] - self.insulation_walls_temp[i-1, 6]) *
                                           self.insulation_wall_specs.R[1]))
 
-        insulation_flux_to_inner_node = (((self.internal_air_temp[i - 1] - self.insulation_walls_temp[i - 1, 0]) *
+        heat_flux_to_inner_node_insulation = (((self.internal_air_temp[i - 1] - self.insulation_walls_temp[i - 1, 0]) *
                                           self.insulation_wall_specs.R[2]) +
                                          ((self.insulation_walls_temp[i - 1, 1] - self.insulation_walls_temp[
                                              i - 1, 0]) * self.insulation_wall_specs.R[1]))
@@ -243,10 +243,10 @@ class Simulation:
         flux_to_inner_air_from_walls += -flux_from_air_to_insulation_wall
 
         self.insulation_walls_temp[i, 0] = (
-                    self.insulation_walls_temp[i - 1, 0] + insulation_flux_to_inner_node * self.dt /
+                    self.insulation_walls_temp[i - 1, 0] + heat_flux_to_inner_node_insulation * self.dt /
                     (self.insulation_wall_specs.mass * self.insulation_wall_specs.cp / 7))
         self.insulation_walls_temp[i, 6] = (
-                    self.insulation_walls_temp[i - 1, 6] + insulation_flux_to_outer_node * self.dt /
+                    self.insulation_walls_temp[i - 1, 6] + heat_flux_to_outer_node_insulation * self.dt /
                     (self.insulation_wall_specs.mass * self.insulation_wall_specs.cp / 7))
 
         # Vectorized Update for nodes 1-5
@@ -395,19 +395,42 @@ class Simulation:
         # setPumpCirculation is called inside each mode function.
         bat_min_temp = np.min(self.battery_temp[i-1])
         bat_max_temp = np.max(self.battery_temp[i-1])
-        # C uses tecLast (temp ENTERING chiller from prev step) for cooling entry/exit triggers
-        tec_last = self.battery_stream_temp_entering_chiller[i-1]
+        # C uses tlcLast (temp Leaving chiller from prev step) for cooling entry/exit triggers
+        tlc_last = self.battery_stream_temp_leaving_chiller[i-1]
         
-        # Cooling Triggers (C: c->batteryStream->tecLast > B_COOLANT_TARGET)
-        if self.chiller_mode == self.COOL_MODE or tec_last > self.B_COOLANT_TARGET:
+        # Cooling Triggers
+        if tlc_last > self.system_specs.chiller_specs['b_coolant_target']:
+            print(f"Entering cooling mode at {time[i]} because tlc>b_coolant_target")
+            # if last mode was standby, we set came_from_standby and circulation timer
+            if self.chiller_mode == self.STANDBY_MODE:
+                self.came_from_standby = True
+                self.circ_run_timer = 0.0
+            self.chiller_mode = self.COOL_MODE
+
+        # cooling execution
+        if self.chiller_mode == self.COOL_MODE:
             self.cooling_mode(i)
+
+            # Check exit conditions
+            # Only leave cooling mode if chiller_inlet_temp is 3 less than the coolant_target
+            tec_last = self.battery_stream_temp_entering_chiller[i - 1]
+            if tec_last < (self.system_specs.chiller_specs['b_coolant_target'] - 3.0):
+                self.set_standby_or_circulate_mode(i)
             
         # Heating Triggers
-        if self.chiller_mode == self.HEAT_MODE or \
-           bat_max_temp < self.BATTERY_HEAT_MIN or \
-           bat_min_temp < self.BATTERY_HEAT_TARGET:
-             self.heating_mode(i)
-             
+        if bat_max_temp < self.system_specs.chiller_specs['battery_heat_min'] or \
+           bat_min_temp < self.system_specs.chiller_specs['battery_heat_target']:
+             self.chiller_mode = self.HEAT_MODE
+
+        # heating execution
+        if self.chiller_mode == self.HEAT_MODE:
+            self.heating_mode(i)
+
+            # Leave Heating Mode Check
+            if bat_max_temp > self.system_specs.chiller_specs['battery_heat_max'] or \
+                    bat_min_temp > self.system_specs.chiller_specs['battery_heat_exit']:
+                self.set_standby_or_circulate_mode(i)
+
         # Circulation Mode
         if self.chiller_mode == self.CIRCULATE_MODE:
             self.circulate_mode(i)
@@ -417,20 +440,6 @@ class Simulation:
             self.standby_mode(i)
 
     def cooling_mode(self, i):
-        # If coming from standby, reset circulation timer (C line 618)
-        if self.chiller_mode == self.STANDBY_MODE:
-            self.came_from_standby = True
-            self.circ_run_timer = 0.0
-
-        self.chiller_mode = self.COOL_MODE
-
-        # setPumpCirculation equivalent (C line 626): pump warmup, early return
-        if self._set_pump_circulation(i):
-            # Still check if we should exit cooling even during warmup
-            tec_last = self.battery_stream_temp_entering_chiller[i-1]
-            if tec_last < (self.B_COOLANT_TARGET - 3.0):
-                self.standby_or_circulate(i)
-            return
 
         # Determine Demand
         # Control Scheme 2: Envicool Base Control Scheme
@@ -441,7 +450,7 @@ class Simulation:
 
         # Check top node temp (index 6)
         b_temp_top = self.battery_temp[i-1, 6]
-        b_demand = (b_temp_top - (self.BATTERY_COOL_MIN + 1.0)) / sensitivity
+        b_demand = (b_temp_top - (self.system_specs.chiller_specs['battery_cool_min'] + 1.0)) / sensitivity
         
         # Compressor Control
         if b_demand >= 0.30 and not self.b_turned_on:
@@ -473,30 +482,17 @@ class Simulation:
         else:
             self.fan_pcnt[i] = 0.0
             self.fans_on_off = self.OFF
-            
-        # Leave Cooling Mode Check (C: c->batteryStream->tecLast < (B_COOLANT_TARGET - 3.0))
-        tec_last = self.battery_stream_temp_entering_chiller[i-1]
-        if tec_last < (self.B_COOLANT_TARGET - 3.0):
-             self.standby_or_circulate(i)
+
 
     def heating_mode(self, i):
-        self.chiller_mode = self.HEAT_MODE
         self.heater_pcnt[i] = 0.80
-        
-        bat_max_temp = np.max(self.battery_temp[i-1])
-        bat_min_temp = np.min(self.battery_temp[i-1])
-
-        # Leave Heating Mode Check
-        if bat_max_temp > self.BATTERY_HEAT_MAX or \
-           bat_min_temp > self.BATTERY_HEAT_EXIT:
-               self.standby_or_circulate(i)
 
     def circulate_mode(self, i):
         # C's circulateMode calls setPumpCirculation first (C line 766)
         if self._set_pump_circulation(i):
             return
         self._set_circulate_values(i)
-        self.standby_or_circulate(i)
+        self.set_standby_or_circulate_mode(i)
 
     def _set_circulate_values(self, i):
         self.compressor_pcnt[i] = 0.0
@@ -512,9 +508,9 @@ class Simulation:
         self.b_turned_on = False
         self.fan_pcnt[i] = 0.0
         
-        self.standby_or_circulate(i)
+        self.set_standby_or_circulate_mode(i)
 
-    def standby_or_circulate(self, i):
+    def set_standby_or_circulate_mode(self, i):
         # C macros: BATTERY_MAX_TEMP = b->temperature[6], BATTERY_MIN_TEMP = b->temperature[6]
         # So abs(MAX - MIN) = 0, which is always < TEMP_STBL (3.0)
         # => standbyOrCirculate always goes to STANDBY_MODE in the C model
