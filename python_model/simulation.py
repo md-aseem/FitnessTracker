@@ -567,7 +567,7 @@ class Simulation:
         # Clip pump percentage at 0.01 to match C model's floor speed
         pump_pcnt = np.clip(self.battery_pump_pcnt[i], 0.01, 1.0)
 
-        volume_flow_rate_lpm = self.BAT_VOLUME_FLOW_RATE_LPM * pump_pcnt
+        volume_flow_rate_lpm = self.system_specs.chiller_specs.bat_volume_flow_rate_lpm * pump_pcnt
         battery_stream_mass_flow = (volume_flow_rate_lpm / 60000.0) * 1050.0 # kg/s (~8.4 kg/s max)
 
         return battery_stream_mass_flow
