@@ -35,7 +35,7 @@ cycles:
     target_soc2: 0.70
 
 #setpoints
-chiller_setpoint: 18 # C
+chiller_setpoint: 19 # C
 battery_cool_target: 25 # C
 battery_cool_min: 19.5 # C
 battery_cool_exit: 22 # C

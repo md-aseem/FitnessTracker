@@ -527,8 +527,7 @@ class Simulation:
 
         # Constants
         C_COEFF = 1.0
-        BASE_COLD_SIDE_TEMPERATURE = 292.15
-        
+
         if self.compressor_on_off == self.ON:
             ambient = self.ambient_temp_profile[i] - 273.15  # Convert K -> °C for chiller curve lookup
             
@@ -541,9 +540,9 @@ class Simulation:
             # Logic from C:
             # if(-b->hicpLast <= (C_COEFF*tableInterpolateCooling(ambientT,c->cooling18))) 
             #    c->batteryColdSideTemp += (BASE_COLD_SIDE_TEMPERATURE - c->batteryColdSideTemp)*transientDt/(1.0*910.0);
-            
+            # this logic only works if the chiller_setpoint is 19C. we are setting it 19C and keeping the logic same for validation
             if -hicp_last <= c18:
-                 target = BASE_COLD_SIDE_TEMPERATURE
+                 target = self.system_specs.chiller_specs['chiller_setpoint'] + 273.15
                  self.battery_cold_side_temp += (target - self.battery_cold_side_temp) * self.dt / (1.0 * 910.0)
             else:
                  # c->batteryColdSideTemp += ((BASE_COLD_SIDE_TEMPERATURE + (-b->hicpLast - c18)*5.0/(c23-c18)) - c->batteryColdSideTemp)*transientDt/(1.0*910.0);
@@ -552,7 +551,7 @@ class Simulation:
                  else:
                      denom = c23 - c18
                      
-                 target = BASE_COLD_SIDE_TEMPERATURE + (-hicp_last - c18) * 5.0 / denom
+                 target = self.system_specs.chiller_specs['chiller_setpoint'] + 273.15 + (-hicp_last - c18) * 5.0 / denom
                  self.battery_cold_side_temp += (target - self.battery_cold_side_temp) * self.dt / (1.0 * 910.0)
                  
         else:
