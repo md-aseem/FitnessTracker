@@ -578,9 +578,13 @@ class Simulation:
         return battery_stream_mass_flow
 
     def update_hvac_condition_and_cool(self, i):
+        """
+        This section updates the hvac_air_temp over time if hvac is present.
+        If no hvac is present, hvac_air_temp remains the same.
+        If hvac is present, it cools down the hvac section with a given cooling and aux power.
+        """
         # Update hvac_air_temp
-        # h->airTemp += (((simmain->ambientTemperature - h->airTemp)*10.0 + componentHeatLoad)/(30.0*1500.0))*transientDt;
-        
+
         if not self.system_specs.hvac_present:
             self.hvac_air_temp[i] = self.hvac_air_temp[i-1]
             self.hvac_aux_power[i] = 0.0
@@ -594,9 +598,6 @@ class Simulation:
         current = self.current_profile[i]
         component_heat_load = 5000.0 * (abs(current) / 150.0) # heat load is proportional to the current
 
-        G = 10
-        h_air_temp += (((ambient - h_air_temp) * G + component_heat_load) / (30.0 * 1500.0)) * self.dt
-        
         # Hvac targets
         acc_target = 303.15 # 30C
         hysteresis = 2.0
@@ -610,10 +611,13 @@ class Simulation:
         else:
             # Maintain previous state? Simplified to OFF for now if dropped below target in check above
             pass
-            
-        h_air_temp -= (cooling_power / (40.0 * 1500.0)) * self.dt
+
+        G = 10 # thermal conductance from ambient to hvac section
         # todo: the mass is different in two lines. make it same after the validation.
-        
+        h_air_temp = h_air_temp + \
+                     (((ambient - h_air_temp) * G + component_heat_load) / (30.0 * 1500.0)) * self.dt - \
+                     (cooling_power / (40.0 * 1500.0)) * self.dt
+
         self.hvac_air_temp[i] = h_air_temp
         self.hvac_aux_power[i] = aux_power
         self.hvac_cooling_power[i] = cooling_power
