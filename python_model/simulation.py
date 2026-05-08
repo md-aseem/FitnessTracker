@@ -85,8 +85,8 @@ class Simulation:
         self.compressor_on_off = self.OFF
         
         # Liquid Loop States
-        self.battery_stream_temp_leaving_chiller = np.full([self.n], initial_batt_temp) # Start with battery temp
-        self.battery_stream_temp_entering_chiller = np.full([self.n], initial_batt_temp)
+        self.chiller_outlet_temp = np.full([self.n], initial_batt_temp) # Start with battery temp
+        self.chiller_inlet_temp = np.full([self.n], initial_batt_temp)
         self.battery_cold_side_temp = initial_batt_temp # Internal variable for chiller
         self.battery_stream_mass_flow = 0.0
         
@@ -294,7 +294,7 @@ class Simulation:
         coolant_cp = 3400.0 # J/kgK
         
         # Temp leaving chiller (entering cold plate)
-        tlc_last = self.battery_stream_temp_leaving_chiller[i-1]
+        tlc_last = self.chiller_outlet_temp[i - 1]
         
         # Max Enthalpy Delta
         # maxEnthalpyDelta = c->batteryStream->massFlowRate*c->batteryStream->coolantCp*(b->tempLast[0] - c->batteryStream->tlcLast);
@@ -316,9 +316,9 @@ class Simulation:
         # Calculate Temp Entering Chiller (for next step control logic)
         # c->batteryStream->tempEnteringChiller = c->batteryStream->tlcLast - b->heatIntoColdPlate/(c->batteryStream->massFlowRate*c->batteryStream->coolantCp);
         if coolant_mass_flow > 0.001:
-            self.battery_stream_temp_entering_chiller[i] = tlc_last - heat_into_cold_plate / (coolant_mass_flow * coolant_cp)
+            self.chiller_inlet_temp[i] = tlc_last - heat_into_cold_plate / (coolant_mass_flow * coolant_cp)
         else:
-            self.battery_stream_temp_entering_chiller[i] = tlc_last
+            self.chiller_inlet_temp[i] = tlc_last
 
         # Node 0 (Bottom)
         # b->temperature[0] += (bottomQ + (ONE/7.0)*batteryTotalHeatGeneration(simmain))*transientDt/(b->mass * b->cp / 7.0);
@@ -397,7 +397,7 @@ class Simulation:
         bat_min_temp = np.min(self.battery_temp[i-1])
         bat_max_temp = np.max(self.battery_temp[i-1])
         # C uses tlcLast (temp Leaving chiller from prev step) for cooling entry/exit triggers
-        tlc_last = self.battery_stream_temp_leaving_chiller[i-1]
+        tlc_last = self.chiller_outlet_temp[i - 1]
         
         # Cooling Triggers
         if tlc_last > self.system_specs.chiller_specs['b_coolant_target']:
@@ -414,7 +414,7 @@ class Simulation:
 
             # Check exit conditions
             # Only leave cooling mode if chiller_inlet_temp is 3 less than the coolant_target
-            tec_last = self.battery_stream_temp_entering_chiller[i - 1]
+            tec_last = self.chiller_inlet_temp[i - 1]
             if tec_last < (self.system_specs.chiller_specs['b_coolant_target'] - 3.0):
                 self.set_standby_or_circulate_mode(i)
             
@@ -557,13 +557,13 @@ class Simulation:
         else:
             # If off, set to temp entering chiller (from C: c->batteryColdSideTemp = c->batteryStream->tempEnteringChiller;)
             # Or simplified drift? The C code explicitly sets it to entering temp when off.
-            self.battery_cold_side_temp = self.battery_stream_temp_entering_chiller[i-1]
+            self.battery_cold_side_temp = self.chiller_inlet_temp[i - 1]
             
         # 2. Battery Coolant Stream Calculation
         # maxEnthalpyDelta = m * cp * (T_cold_side - T_entering_last)
         # T_leaving = T_entering_last + (Heater + Sharing + 0.7 * maxEnthalpyDelta) / (m * cp)
         
-        tec_last = self.battery_stream_temp_entering_chiller[i-1]
+        tec_last = self.chiller_inlet_temp[i - 1]
         
         self.battery_stream_mass_flow = self.calculate_battery_stream_mass_flow_rate(i)
 
@@ -573,8 +573,8 @@ class Simulation:
         
         heater_heat = self.heater_pcnt[i] * self.system_specs.chiller_specs['heater_heat']
         
-        self.battery_stream_temp_leaving_chiller[i] = tec_last + \
-            (heater_heat + 0.7 * max_enthalpy_delta) / (self.battery_stream_mass_flow * coolant_cp)
+        self.chiller_outlet_temp[i] = tec_last + \
+                                      (heater_heat + 0.7 * max_enthalpy_delta) / (self.battery_stream_mass_flow * coolant_cp)
 
 
     def calculate_battery_stream_mass_flow_rate(self, i):
@@ -769,8 +769,8 @@ class Simulation:
             'chiller_mode': self.chiller_mode_history,
             'compressor_pct': self.compressor_pcnt,
             'cell_heat': self.cell_heat_gen_profile,
-            'batt_coolant_temp_leaving_chiller': self.battery_stream_temp_leaving_chiller,
-            'batt_coolant_temp_entering_chiller': self.battery_stream_temp_entering_chiller,
+            'batt_coolant_temp_leaving_chiller': self.chiller_outlet_temp,
+            'batt_coolant_temp_entering_chiller': self.chiller_inlet_temp,
         })
         os.makedirs(os.path.dirname(filename), exist_ok=True)
         df.to_csv(filename, index=False)
