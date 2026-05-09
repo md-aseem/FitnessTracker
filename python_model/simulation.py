@@ -334,7 +334,7 @@ class Simulation:
         # C code: ((currentCurrent > 0.0) ? (2.5*104.0*48.0*(currentCurrent/150.0)) : (-2.5*104.0*48.0*(currentCurrent/150.0)))
         # This simplifies to: 2.5 * 104.0 * 48.0 * abs(current) / 150.0
         current_amps = self.current_profile[i]
-        battery_tab_heat = 2.5 * 104.0 * 48.0 * abs(current_amps) / 150.0
+        battery_tab_heat = 2.5 * 104.0 * 48.0 * abs(current_amps) / (self.system_specs.battery_specs.cell_capacity_ah * 0.5)
 
         self.battery_temp[i, 6] = self.battery_temp[i-1, 6] + \
                                   (top_q + (1.0/7.0) * total_heat_gen + battery_tab_heat) * self.dt / \
