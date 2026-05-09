@@ -111,4 +111,4 @@ hvac:
 circulation_time_limit: 120.0 # seconds
 temp_stable: 3.0 # Stability threshold
 heater_heat: 18000 # Watts? Checking C code implies this variable exists or is constant
-bat_volume_flow_rate_lpm: 480.0
+bat_volume_flow_rate_lpm: 400.0
