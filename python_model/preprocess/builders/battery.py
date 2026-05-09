@@ -33,7 +33,7 @@ def build_battery_specs(input_config: InputConfig,
         thickness=0.204,
         topUA=15.0, # how?
         coldPlateUA=666.67, # 20000.0 / 30.0 how?
-        initial_temperature=input_config.initial_battery_temp + 273.15,
+        initial_temperature=input_config.initial_battery_temp,
         soc_init=input_config.soc_init,
         total_energy=(3.47*52.0)*(304.0*80.0), # from C model
         n_cells_in_a_module=52,
