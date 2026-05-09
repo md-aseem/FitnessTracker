@@ -297,7 +297,8 @@ struct Battery *initializeBattery(struct SimMain *simmain)
    p->heatIntoAir              = ZERO;
    p->cumulativeBatteryHeat    = ZERO;
 //   p->totalBatteryEnergy       = 1331.2*314.0*12.0;  /* 1331.2 Volts * 314.0 A*hrs * 12 strings per container */
-   p->totalBatteryEnergy       = (3.47*52.0)*(304.0*80.0);
+   p->cellCapacityAh           = 306.0;
+   p->totalBatteryEnergy       = (3.47*52.0)*(p->cellCapacityAh*80.0);
    p->initialSoh               = ONE;
    p->soh                      = p->initialSoh;
    p->soc                      = 0.01;               /* initial SOC */
