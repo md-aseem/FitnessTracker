@@ -305,7 +305,7 @@ void loadBatteryCurves(struct SimMain *simmain)
       /* this table is at 25 degrees C (Cell temp?)             */
       /* updated for Q2 EVE306 cells at BOL on December 3 2025  */
       /*            soc                 0.50DP                0.25DP                  0                 0.25CP               0.50CP    */
-      heat(0,0)  = 0.00;  heat(0,1)  = -153.00;  heat(0,2)  = -76.50;  heat(0,3)  = ZERO;  heat(0,4)  = 76.50;  heat(0,5)  = 153.00;
+      heat(0,0)  = 0.00;  heat(0,1)  = -b->cellCapacityAh*0.50;  heat(0,2)  = -b->cellCapacityAh*0.25;  heat(0,3)  = ZERO;  heat(0,4)  = b->cellCapacityAh*0.25;  heat(0,5)  = b->cellCapacityAh*0.50;
       heat(1,0)  = 0.00;  heat(1,1)  =   63.05;  heat(1,2)  =  27.43;  heat(1,3)  = ZERO;  heat(1,4)  = 27.95;  heat(1,5)  =  10.54;
       heat(2,0)  = 0.05;  heat(2,1)  =   38.80;  heat(2,2)  =  16.07;  heat(2,3)  = ZERO;  heat(2,4)  =  6.96;  heat(2,5)  =  19.45;
       heat(3,0)  = 0.10;  heat(3,1)  =   14.54;  heat(3,2)  =   4.71;  heat(3,3)  = ZERO;  heat(3,4)  =  3.38;  heat(3,5)  =  10.95;
@@ -361,7 +361,7 @@ void loadBatteryCurves(struct SimMain *simmain)
                          /* soc   0.50DP    0.25DP     0        0.25CP  0.50CP    */
                          /*        -150A     -75A      0A         75A    150A     */
                         /* updated for Q2 CATL306 cells at BOL on October 10 2025 */
-      heat(0,0)  = 0.00;  heat(0,1)  = -153.00;  heat(0,2)  = -76.50;  heat(0,3)  = ZERO;  heat(0,4)  = 76.50;  heat(0,5)  = 153.00;
+      heat(0,0)  = 0.00;  heat(0,1)  = -b->cellCapacityAh*0.50;  heat(0,2)  = -b->cellCapacityAh*0.25;  heat(0,3)  = ZERO;  heat(0,4)  = b->cellCapacityAh*0.25;  heat(0,5)  = b->cellCapacityAh*0.50;
       heat(1,0)  = 0.00;  heat(1,1)  =   17.17;  heat(1,2)  =   6.87;  heat(1,3)  = ZERO;  heat(1,4)  =  4.08;  heat(1,5)  =  11.46;
       heat(2,0)  = 0.10;  heat(2,1)  =   11.66;  heat(2,2)  =   4.63;  heat(2,3)  = ZERO;  heat(2,4)  =  3.65;  heat(2,5)  =   9.45;
       heat(3,0)  = 0.20;  heat(3,1)  =   11.66;  heat(3,2)  =   4.63;  heat(3,3)  = ZERO;  heat(3,4)  =  3.65;  heat(3,5)  =   9.45;

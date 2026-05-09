@@ -240,6 +240,8 @@ typedef struct Battery
    double soh;           /* state of heatlth */
    double soc;           /* state of charge  */
 
+   double cellCapacityAh;
+
    double bottomUA;
    double topUA;
 
