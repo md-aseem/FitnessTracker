@@ -63,7 +63,7 @@ def load_operation_specs() -> OperationalSpecs:
                                                                   dt=dt
                                                                   )
 
-    ambient_temp_constant = input_config.ambient_temperature + 273.15
+    ambient_temp_constant = input_config.ambient_temperature
     time_s, ambient_profile = generate_ambient_temp_profile_for_a_day(ambient_temp_constant, dt=dt)
     
     # Radiation
