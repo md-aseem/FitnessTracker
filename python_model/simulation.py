@@ -122,7 +122,7 @@ class Simulation:
         self.batt_ave_temp_operating = 0.0
         self.batt_ave_temp_not_operating = 0.0
         
-        self.idle_rest_cutoff_temp = 296.15 # 23 C (Matches C-Code)
+        self.idle_rest_cutoff_temp = 23.0 # Matches C-Code equivalents
 
 
     def generate_heat_gen_interpolator(self):
@@ -397,7 +397,7 @@ class Simulation:
         # Cooling Triggers
         if tlc_last > self.system_specs.setpoints.b_coolant_target:
             if self.chiller_mode != self.COOL_MODE:
-                print(f"Entering cooling mode at {self.time_s[i]} because tlc>b_coolant_target")
+                print(f"Entering cooling mode at {self.time_s[i]/3600:.2f} hr because tlc>b_coolant_target")
                 # if last mode was standby, we set came_from_standby and circulation timer
                 if self.chiller_mode == self.STANDBY_MODE:
                     self.came_from_standby = True
@@ -515,7 +515,7 @@ class Simulation:
              self.chiller_mode = self.CIRCULATE_MODE
              self.circ_run_timer = 0.0
         else:
-             self.circ_run_timer = self.system_specs.chiller_specs['circulation_time_limit'] + 1.0  # Expire timer
+             self.circ_run_timer = self.system_specs.chiller_specs.circulation_time_limit + 1.0  # Expire timer
              self.chiller_mode = self.STANDBY_MODE
 
     def update_chiller_condition_and_cool(self, i):
@@ -525,7 +525,7 @@ class Simulation:
         C_COEFF = 1.0
 
         if self.compressor_on_off == self.ON:
-            ambient = self.ambient_temp_profile[i] - 273.15  # Convert K -> °C for chiller curve lookup
+            ambient = self.ambient_temp_profile[i]
             
             c18 = C_COEFF * self.get_chiller_cooling_power(ambient, 18)
             c23 = C_COEFF * self.get_chiller_cooling_power(ambient, 23)
@@ -536,11 +536,11 @@ class Simulation:
             # update refrigerant temp to slowly go to the chiller_setpoint with a time-constant of 910 seconds
             # this logic only works if the chiller_setpoint is 19C. we are setting it 19C and keeping the logic same for validation
             if -hicp_last <= c18:
-                 target = self.system_specs.setpoints.chiller_setpoint + 273.15
+                 target = self.system_specs.setpoints.chiller_setpoint
                  self.refrigerant_temp[i] = self.refrigerant_temp[i-1] + (target - self.refrigerant_temp[i-1]) * self.dt / (1.0 * 910.0)
             else:
                 # if demand cannot be met, we update the target temperature
-                 target = self.system_specs.setpoints.chiller_setpoint + 273.15 + (-hicp_last - c18) * 5.0 / (c23 - c18)
+                 target = self.system_specs.setpoints.chiller_setpoint + (-hicp_last - c18) * 5.0 / (c23 - c18)
                  self.refrigerant_temp[i] = self.refrigerant_temp[i-1] + (target - self.refrigerant_temp[i-1]) * self.dt / (1.0 * 910.0)
                  
         else:
@@ -595,7 +595,7 @@ class Simulation:
         component_heat_load = 5000.0 * (abs(current) / 150.0) # heat load is proportional to the current
 
         # Hvac targets
-        acc_target = 303.15 # 30C
+        acc_target = 30.0 # 30C
         hysteresis = 2.0
         
         cooling_power = 0.0
@@ -702,9 +702,9 @@ class Simulation:
         fig, axs = plt.subplots(4, 1, figsize=(12, 16), sharex=True)
         
         # 1. Temperatures
-        axs[0].plot(time_hours, self.battery_temp[:, 6] - 273.15, label='Battery Top Temp')
-        axs[0].plot(time_hours, self.battery_temp[:, 0] - 273.15, label='Battery Bottom Temp', linestyle='--')
-        axs[0].plot(time_hours, self.ambient_temp_profile - 273.15, label='Ambient Temp', alpha=0.6)
+        axs[0].plot(time_hours, self.battery_temp[:, 6], label='Battery Top Temp')
+        axs[0].plot(time_hours, self.battery_temp[:, 0], label='Battery Bottom Temp', linestyle='--')
+        axs[0].plot(time_hours, self.ambient_temp_profile, label='Ambient Temp', alpha=0.6)
         axs[0].set_ylabel('Temperature (°C)')
         axs[0].set_title('System Temperatures')
         axs[0].legend()
@@ -745,9 +745,9 @@ class Simulation:
     def save_results_to_csv(self, filename='results/python_simulation_results.csv'):
         df = pd.DataFrame({
             'time_s': self.time_s,
-            'battery_top_temp_c': self.battery_temp[:, 6] - 273.15,
-            'battery_bottom_temp_c': self.battery_temp[:, 0] - 273.15,
-            'ambient_temp_c': self.ambient_temp_profile - 273.15,
+            'battery_top_temp_c': self.battery_temp[:, 6],
+            'battery_bottom_temp_c': self.battery_temp[:, 0],
+            'ambient_temp_c': self.ambient_temp_profile,
             'current_a': self.current_profile,
             'soc': self.soc,
             'total_aux_power_w': self.total_aux_power,
