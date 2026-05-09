@@ -51,7 +51,7 @@ class Simulation:
         initial_ambient = self.ambient_temp_profile[0]
 
         # Generate gradient: Start at internal (virtual), end at ambient (Node 6)
-        wall_grad = np.linspace(initial_batt_temp, initial_ambient, 8)[1:]
+        wall_grad = initial_batt_temp + (initial_ambient - initial_batt_temp) / 7.0 * np.arange(7)
         self.steel_walls_temp = np.tile(wall_grad, (self.n, 1))
         self.insulation_walls_temp = np.tile(wall_grad, (self.n, 1))
 
@@ -104,6 +104,8 @@ class Simulation:
 
         # Internal Heat States
         self.heat_into_cold_plate = np.zeros([self.n])
+        self.heat_from_walls_to_air = np.zeros([self.n])
+        self.heat_from_battery_to_air = np.zeros([self.n])
 
         # Energy Aggregation
         self.operating_aux_energy = 0.0
@@ -268,6 +270,9 @@ class Simulation:
         # Here we are at start of loop (step i). battery_temp[i-1] corresponds to last step.
         b_specs = self.system_specs.battery_specs
         heat_into_air_from_battery = (self.internal_air_temp[i - 1] - self.battery_temp[i - 1, 6]) * b_specs.R[2]
+
+        self.heat_from_walls_to_air[i] = flux_to_inner_air_from_walls
+        self.heat_from_battery_to_air[i] = -heat_into_air_from_battery
 
         self.internal_air_temp[i] = self.internal_air_temp[i - 1] + (
                 -heat_into_air_from_battery + flux_to_inner_air_from_walls) * self.dt / (20.0 * 1006.0)
@@ -756,6 +761,10 @@ class Simulation:
             'cell_heat': self.cell_heat_gen_profile,
             'batt_coolant_temp_leaving_chiller': self.chiller_outlet_temp,
             'batt_coolant_temp_entering_chiller': self.chiller_inlet_temp,
+            'internal_air_temp_c': self.internal_air_temp,
+            'heat_from_walls_to_air_w': self.heat_from_walls_to_air,
+            'heat_from_battery_to_air_w': self.heat_from_battery_to_air,
+            'radiation_load_w': self.radiation_heat_load,
         })
         os.makedirs(os.path.dirname(filename), exist_ok=True)
         df.to_csv(filename, index=False)
