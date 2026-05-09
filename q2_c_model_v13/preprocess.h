@@ -214,7 +214,7 @@ enum controlModes {AUTO_MODE,
 
 /* battery tab heat is considered to be 2.5W per cell @ 0.5C */
 /*    and to linearly decrease from that point               */
-#define batteryTabHeat                      ((currentCurrent > 0.0) ? (2.5*104.0*48.0*(currentCurrent/150.0)) : (-2.5*104.0*48.0*(currentCurrent/150.0)))
+#define batteryTabHeat                      ((currentCurrent > 0.0) ? (2.5*104.0*48.0*(currentCurrent/(b->cellCapacityAh*0.5))) : (-2.5*104.0*48.0*(currentCurrent/(b->cellCapacityAh*0.5))))
 #define batteryHeatMultiplier               1.0
 #define numberOfQuantums                    58.0
 
