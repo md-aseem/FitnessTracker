@@ -1,7 +1,7 @@
 
 
 
-@FIXED_AMBIENT_TEMPERATURE_C{ 40.0 }
+@FIXED_AMBIENT_TEMPERATURE_C{ 35.0 }
 
 @INITIAL_BATTERY_TEMPERATURE_C{ 20.0 }
 
@@ -12,11 +12,11 @@
 @MAX_DISCHARGE_RATE{ 0.25 }
 
 @BATTERY_MODEL{ catl_306Ahr }                # eve_306Ahr         or  catl_306Ahr
-@BATTERY_CONDITION{ end_of_life }            # end_of_life        or  beginning_of_life
+@BATTERY_CONDITION{ beginning_of_life }            # end_of_life        or  beginning_of_life
 
 
-#@CHILLER_MODEL{ envicool_55kW_c/2 }         # envicool_55kW_c/4  or envicool_55kW_c/2   or  
-@CHILLER_MODEL{ bergstrom_55kW_c/2 }         # envicool_55kW_c/4  or envicool_55kW_c/2   or  
+#@CHILLER_MODEL{ envicool_55kW_c/2 }         # envicool_55kW_c/4  or envicool_55kW_c/2   or
+@CHILLER_MODEL{ bergstrom_55kW_c/2 }         # envicool_55kW_c/4  or envicool_55kW_c/2   or
                                              # bergstrom_55kW_c/4 or bergstrom_55kW_c/2
 @CHILLER_NOISE_KIT{ no  }                    # yes                or no
 @HVAC_PRESENT{ no }                          # yes                or no

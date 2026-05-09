@@ -3,8 +3,8 @@ ambient_temperature: 35
 
 # operational
 n_cycles: 1
-max_charge_rate: 0.44
-max_discharge_rate: 0.5
+max_charge_rate: 0.23
+max_discharge_rate: 0.25
 battery_type: catl_306           # eve_306, catl_306
 battery_life: bol                # bol, eol
 chiller_model: bergstrom_55kw_c/2 # envicool_55kw_c/4  or envicool_55kw_c/2   or
