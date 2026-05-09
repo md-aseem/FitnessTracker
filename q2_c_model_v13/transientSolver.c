@@ -1352,7 +1352,7 @@ void outputTimeStepResults(struct SimMain *simmain)
 
    /* report temperatures */
    a = auxLoadListHead;   b = batteryListHead;   c = chillerListHead;   h = hvacListHead;   d = dehumidifierListHead;   p = inverterListHead;
-   fprintf(OUTPUTFILE," %8.3f %8.3f",simmain->ambientTemperature,simmain->internalAirTemp);
+   fprintf(OUTPUTFILE," %8.3f %8.3f",simmain->ambientTemperature - 273.15,simmain->internalAirTemp - 273.15);
    fprintf(OUTPUTFILE," %8.3f %8.3f",c->batteryStream->tempLeavingChiller,c->batteryStream->tempEnteringChiller);
    while(p != NULL){ fprintf(OUTPUTFILE," %8.3f %8.3f",c->inverterStream->tempLeavingChiller,c->inverterStream->tempEnteringChiller); p = NEXT(p); }
    while(b != NULL){  for(i=0;i<=6;i++)   fprintf(OUTPUTFILE," %8.3f",b->temperature[i]);    b = NEXT(b);  }
