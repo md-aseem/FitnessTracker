@@ -21,9 +21,10 @@ class InputConfig(BaseModel):
     battery_life: str
     chiller_model: str
     chiller_noise_kit: bool
-    sunrise_time: int
-    sunset_time: int
     control_scheme: str
+
+    location: str = None
+    month: int = None
 
     # initialization
     soc_init: float
@@ -133,8 +134,6 @@ class WallSpecs:
 @dataclass
 class EnvironmentSpecs:
     ambient_temperature: float
-    sunrise_time: int
-    sunset_time: int
     is_radiation: bool = True
     radiation_intensity: float = 350 # W/m2  radiation_intensity(1000) * absorptivity(0.35)
     percent_surface_in_radiation: float = 1

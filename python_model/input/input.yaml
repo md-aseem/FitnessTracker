@@ -12,8 +12,8 @@ chiller_model: bergstrom_55kw_c/2 # envicool_55kw_c/4  or envicool_55kw_c/2   or
 
 chiller_noise_kit: False         # True/False
 
-sunrise_time: 7
-sunset_time: 7
+location: "London"
+month: 6
 
 control_scheme: battery_temp_control
 
