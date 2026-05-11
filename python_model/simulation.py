@@ -126,6 +126,15 @@ class Simulation:
         
         self.idle_rest_cutoff_temp = 23.0 # Matches C-Code equivalents
 
+        # Chiller Curves pre-calculated for speed
+        chiller_df = self.system_specs.chiller_specs.chiller_curves_df
+        c18_df = chiller_df[chiller_df['temp'] == 18]
+        c23_df = chiller_df[chiller_df['temp'] == 23]
+        self._chiller_amb_18 = c18_df['ambient_temp_C'].values
+        self._chiller_pwr_18 = c18_df['cooling_power_W'].values
+        self._chiller_amb_23 = c23_df['ambient_temp_C'].values
+        self._chiller_pwr_23 = c23_df['cooling_power_W'].values
+
 
     def generate_heat_gen_interpolator(self):
         df = self.system_specs.battery_specs.heat_gen_df
@@ -145,23 +154,12 @@ class Simulation:
 
     def get_chiller_cooling_power(self, ambient_temp, curve_temp_c):
         """
-        Interpolate cooling power from chiller curves.
-        curve_temp_c: 18 or 23
+        Interpolate cooling power from cached chiller curves.
         """
-        df = self.system_specs.chiller_specs.chiller_curves_df
-        if df.empty:
-            return 0.0
-            
-        # Filter by curve temp (18 or 23)
-        # The builder creates a column 'temp' with these values
-        curve_df = df[df['temp'] == curve_temp_c]
-        
-        if curve_df.empty:
-            return 0.0
-            
-        # Interpolate
-        # Assuming columns are: ambient_temp_C, cooling_power_W, aux_power_W
-        return np.interp(ambient_temp, curve_df['ambient_temp_C'], curve_df['cooling_power_W'])
+        if curve_temp_c == 18:
+            return np.interp(ambient_temp, self._chiller_amb_18, self._chiller_pwr_18)
+        else:
+            return np.interp(ambient_temp, self._chiller_amb_23, self._chiller_pwr_23)
 
     def run(self, steps: int = None):
         print(f"Running simulation...")
@@ -169,22 +167,23 @@ class Simulation:
         start_time = time.time()
         # Main time-stepping loop
         limit = self.time_s.size if steps is None else min(steps, self.time_s.size)
+        
+        # Localize methods to minimize attribute lookups in the hot loop
+        calc_ambient = self.calculate_ambient_heat_load_and_internal_air_temp
+        update_control = self.update_control_state
+        update_chiller = self.update_chiller_condition_and_cool
+        update_hvac = self.update_hvac_condition_and_cool
+        update_dehumidifier = self.update_dehumidifier_condition_and_dry_out
+        update_battery = self.update_battery_temp
+        
         for i in tqdm(range(1, limit)):
-
-            ### Calculating internal air temp and walls temp
-            self.calculate_ambient_heat_load_and_internal_air_temp(i)
-            
-            # Control Logic Updates
-            self.update_control_state(i)
+            calc_ambient(i)
+            update_control(i)
             self.chiller_mode_history[i] = self.chiller_mode
-            self.update_chiller_condition_and_cool(i)
-            self.update_hvac_condition_and_cool(i)
-            self.update_dehumidifier_condition_and_dry_out(i)
-
-            self.update_battery_temp(i)
-            
-            # Post-Step Calculations
-            # self.tabulate_aux_energy(i) # Moved to post-simulation
+            update_chiller(i)
+            update_hvac(i)
+            update_dehumidifier(i)
+            update_battery(i)
             
         # Post-Simulation Metrics
         self.calculate_metrics()
@@ -211,10 +210,8 @@ class Simulation:
                                       self.steel_wall_specs.R[2]
         flux_to_inner_air_from_walls = -flux_from_air_to_steel_wall  # accumulators for air update
 
-        self.steel_walls_temp[i, 0] = (self.steel_walls_temp[i - 1, 0] + heat_flux_to_inner_node_steel * self.dt /
-                                       (self.steel_wall_specs.mass * self.steel_wall_specs.cp / 7))
-        self.steel_walls_temp[i, 6] = (self.steel_walls_temp[i - 1, 6] + heat_flux_to_outer_node_steel * self.dt /
-                                       (self.steel_wall_specs.mass * self.steel_wall_specs.cp / 7))
+        self.steel_walls_temp[i, 0] = self.steel_walls_temp[i - 1, 0] + heat_flux_to_inner_node_steel * self.dt / (self.steel_wall_specs.mass * self.steel_wall_specs.cp / 7.0)
+        self.steel_walls_temp[i, 6] = self.steel_walls_temp[i - 1, 6] + heat_flux_to_outer_node_steel * self.dt / (self.steel_wall_specs.mass * self.steel_wall_specs.cp / 7.0)
 
         # Vectorized Update for nodes 1-5
         # T[j] = T_prev[j] + ( (T_prev[j-1] - T_prev[j])*R + (T_prev[j+1] - T_prev[j])*R ) * dt / (mass * cp / 7)
@@ -225,8 +222,7 @@ class Simulation:
         flux_left = (t_prev_steel[0:5] - t_prev_steel[1:6]) * self.steel_wall_specs.R[1]
         flux_right = (t_prev_steel[2:7] - t_prev_steel[1:6]) * self.steel_wall_specs.R[1]
         
-        self.steel_walls_temp[i, 1:6] = t_prev_steel[1:6] + (flux_left + flux_right) * self.dt / \
-                                        (self.steel_wall_specs.mass * self.steel_wall_specs.cp / 7)
+        self.steel_walls_temp[i, 1:6] = t_prev_steel[1:6] + (flux_left + flux_right) * self.dt / (self.steel_wall_specs.mass * self.steel_wall_specs.cp / 7.0)
 
         # Insulation Wall Update
         heat_flux_to_outer_node_insulation = (((self.ambient_temp_profile[i] - self.insulation_walls_temp[i-1, 6]) *
@@ -244,12 +240,8 @@ class Simulation:
                                            self.insulation_wall_specs.R[2]
         flux_to_inner_air_from_walls += -flux_from_air_to_insulation_wall
 
-        self.insulation_walls_temp[i, 0] = (
-                    self.insulation_walls_temp[i - 1, 0] + heat_flux_to_inner_node_insulation * self.dt /
-                    (self.insulation_wall_specs.mass * self.insulation_wall_specs.cp / 7))
-        self.insulation_walls_temp[i, 6] = (
-                    self.insulation_walls_temp[i - 1, 6] + heat_flux_to_outer_node_insulation * self.dt /
-                    (self.insulation_wall_specs.mass * self.insulation_wall_specs.cp / 7))
+        self.insulation_walls_temp[i, 0] = self.insulation_walls_temp[i - 1, 0] + heat_flux_to_inner_node_insulation * self.dt / (self.insulation_wall_specs.mass * self.insulation_wall_specs.cp / 7.0)
+        self.insulation_walls_temp[i, 6] = self.insulation_walls_temp[i - 1, 6] + heat_flux_to_outer_node_insulation * self.dt / (self.insulation_wall_specs.mass * self.insulation_wall_specs.cp / 7.0)
 
         # Vectorized Update for nodes 1-5
         t_prev_ins = self.insulation_walls_temp[i - 1]
@@ -257,8 +249,7 @@ class Simulation:
         flux_left = (t_prev_ins[0:5] - t_prev_ins[1:6]) * self.insulation_wall_specs.R[1]
         flux_right = (t_prev_ins[2:7] - t_prev_ins[1:6]) * self.insulation_wall_specs.R[1]
         
-        self.insulation_walls_temp[i, 1:6] = t_prev_ins[1:6] + (flux_left + flux_right) * self.dt / \
-                                             (self.insulation_wall_specs.mass * self.insulation_wall_specs.cp / 7)
+        self.insulation_walls_temp[i, 1:6] = t_prev_ins[1:6] + (flux_left + flux_right) * self.dt / (self.insulation_wall_specs.mass * self.insulation_wall_specs.cp / 7.0)
 
         # Internal Air Temperature Update
         # heatIntoAir = (prevT_internal - b->tempLast[6])*R[2]; (From C)
@@ -328,8 +319,7 @@ class Simulation:
         # Node 0 (Bottom)
         # b->temperature[0] += (bottomQ + (ONE/7.0)*batteryTotalHeatGeneration(simmain))*transientDt/(b->mass * b->cp / 7.0);
         self.battery_temp[i, 0] = self.battery_temp[i-1, 0] + \
-                                  (bottom_q + (1.0/7.0) * total_heat_gen) * self.dt / \
-                                  (b_specs.mass * b_specs.cp / 7.0)
+                                  (bottom_q + (1.0/7.0) * total_heat_gen) * self.dt / (b_specs.mass * b_specs.cp / 7.0)
 
         # Node 6 (Top)
         # b->temperature[6] += (topQ    + (ONE/7.0)*batteryTotalHeatGeneration(simmain) +  batteryTabHeat)*transientDt/(b->mass * b->cp / 7.0);
@@ -342,8 +332,7 @@ class Simulation:
         battery_tab_heat = 2.5 * 104.0 * 48.0 * abs(current_amps) / (self.system_specs.battery_specs.cell_capacity_ah * 0.5)
 
         self.battery_temp[i, 6] = self.battery_temp[i-1, 6] + \
-                                  (top_q + (1.0/7.0) * total_heat_gen + battery_tab_heat) * self.dt / \
-                                  (b_specs.mass * b_specs.cp / 7.0)
+                                  (top_q + (1.0/7.0) * total_heat_gen + battery_tab_heat) * self.dt / (b_specs.mass * b_specs.cp / 7.0)
 
         # Middle Nodes (1-5) Vectorized
         t_prev_batt = self.battery_temp[i-1]
