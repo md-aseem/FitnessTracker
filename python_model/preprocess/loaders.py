@@ -8,7 +8,7 @@ def load_input_config(path: str = None) -> InputConfig:
         path = os.environ.get('QUANTUM_INPUT_PATH')
     
     if path is None:
-        path = Path(__file__).parent.parent / "input.yaml"
+        path = Path(__file__).parent.parent / "input/input.yaml"
     
     config_path = Path(path)
     if not config_path.exists():
