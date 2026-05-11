@@ -1,5 +1,5 @@
 quantum: 2p0
-ambient_temperature: 35
+ambient_temperature: 25
 
 # operational
 n_cycles: 1
