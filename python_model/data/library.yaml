@@ -17,7 +17,7 @@ batteries:
       temperature_target: 20 # Question: this should be here?
 
   eve_306:
-    ocv_path: ocv/eve_306.csv
+    ocv_path: data/ocv/eve_306.csv
     thermal:
       heat_capacity_j_per_kgk: 1050
       thermal_conductivity_w_per_mk: 1.4
