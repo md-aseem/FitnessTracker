@@ -10,11 +10,15 @@ import urllib.parse
 import json
 from pathlib import Path
 from dataclasses import dataclass
-from typing import Optional
+from typing import Optional, Dict
 
 # Single cache file alongside data/
 _CACHE_FILE = Path(__file__).parent.parent.parent / "data" / "weather_cache.json"
 _MAX_CACHE_ENTRIES = 5000
+
+# In-memory caches to avoid redundant disk/API hits in the same process
+_CACHED_JSON: Optional[Dict] = None
+_GEOCODE_CACHE: Dict[str, Optional[tuple]] = {}
 
 
 @dataclass
@@ -35,18 +39,35 @@ def _cache_key(location: str, month: int) -> str:
 
 
 def _load_cache() -> dict:
-    """Load the entire cache file."""
+    """Load the entire cache file with retries and in-memory caching."""
+    global _CACHED_JSON
+    if _CACHED_JSON is not None:
+        return _CACHED_JSON
+
+    import time
     if not _CACHE_FILE.exists():
-        return {}
-    try:
-        with open(_CACHE_FILE) as f:
-            return json.load(f)
-    except (json.JSONDecodeError, OSError):
-        return {}
+        _CACHED_JSON = {}
+        return _CACHED_JSON
+    
+    for attempt in range(5):
+        try:
+            with open(_CACHE_FILE) as f:
+                _CACHED_JSON = json.load(f)
+                return _CACHED_JSON
+        except (json.JSONDecodeError, OSError):
+            if attempt < 4:
+                time.sleep(0.1 * (attempt + 1))
+                continue
+    
+    _CACHED_JSON = {}
+    return _CACHED_JSON
 
 
 def _save_cache(cache: dict):
     """Save the entire cache file, evicting oldest entries if over limit."""
+    global _CACHED_JSON
+    _CACHED_JSON = cache  # Update in-memory cache
+
     # Evict oldest entries if over the limit
     if len(cache) > _MAX_CACHE_ENTRIES:
         # Sort by last_accessed, keep newest
@@ -60,8 +81,7 @@ def _save_cache(cache: dict):
 
 
 def _load_from_cache(location: str, month: int) -> Optional[HistoricalWeatherData]:
-    """Try to load cached weather data. Updates last_accessed on hit."""
-    import time
+    """Try to load cached weather data. READ-ONLY to avoid race conditions."""
     cache = _load_cache()
     key = _cache_key(location, month)
 
@@ -72,9 +92,8 @@ def _load_from_cache(location: str, month: int) -> Optional[HistoricalWeatherDat
     if "hourly_temperature" not in entry or "display_name" not in entry:
         return None  # Stale format
 
-    # Update last_accessed timestamp
-    entry["last_accessed"] = int(time.time())
-    _save_cache(cache)
+    # Note: We no longer update last_accessed here to avoid concurrent writes 
+    # during parallel simulation runs. LRU only updates when new data is SAVED.
 
     return HistoricalWeatherData(
         location=entry["location"],
@@ -108,20 +127,31 @@ def _save_to_cache(data: HistoricalWeatherData):
 
 
 def _geocode(location_str: str) -> Optional[tuple[float, float, str]]:
-    """Geocode a location string using Nominatim API.
+    """Geocode a location string using Nominatim API with in-memory caching.
     
     Returns (lat, lon, display_name) or None on failure.
     """
+    loc_key = location_str.lower().strip()
+    if loc_key in _GEOCODE_CACHE:
+        return _GEOCODE_CACHE[loc_key]
+
+    import time
     try:
+        # Nominatim asks for 1 request per second
+        time.sleep(1.0) 
         url = f"https://nominatim.openstreetmap.org/search?q={urllib.parse.quote(location_str)}&format=json&limit=1"
         headers = {"User-Agent": "QuantumThermalModel/1.0"}
         req = urllib.request.Request(url, headers=headers)
         with urllib.request.urlopen(req) as response:
             data = json.loads(response.read().decode())
             if data:
-                return float(data[0]["lat"]), float(data[0]["lon"]), data[0].get("display_name", location_str)
+                res = (float(data[0]["lat"]), float(data[0]["lon"]), data[0].get("display_name", location_str))
+                _GEOCODE_CACHE[loc_key] = res
+                return res
     except Exception as e:
         print(f"Geocoding error: {e}")
+    
+    _GEOCODE_CACHE[loc_key] = None
     return None
 
 

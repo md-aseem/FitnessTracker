@@ -6,7 +6,7 @@ n_cycles: 1
 max_charge_rate: 0.23
 max_discharge_rate: 0.25
 battery_type: eve_306           # eve_306, catl_306
-battery_life: eol                # bol, eol
+battery_life: bol                # bol, eol
 chiller_model: bergstrom_55kw_c/2 # envicool_55kw_c/4  or envicool_55kw_c/2   or
                                  # bergstrom_55kw_c/4 or bergstrom_55kw_c/2
 
@@ -21,8 +21,8 @@ control_scheme: battery_temp_control
 # initialization
 soc_init: 0.01
 initial_battery_temp: 20
-soh_init: 1
-battery_temp_init: 20
+soh_init: 1.0
+n_years: 20
 
 custom_power_profile_path: ""
 
@@ -45,4 +45,3 @@ battery_heat_min: 15 # C
 battery_heat_target: 18 # C
 battery_heat_max: 22 # C
 battery_heat_exit: 17.5 # C
-

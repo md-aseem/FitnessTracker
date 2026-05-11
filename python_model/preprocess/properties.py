@@ -35,6 +35,10 @@ class InputConfig(BaseModel):
     hvac_present: bool = False
     cycles: list = []
 
+    # Simulation Lifetime
+    n_years: int = 1
+    soh_init: float = 1.0
+
     # setpoints
     chiller_setpoint: float
     battery_cool_target: float
@@ -53,9 +57,20 @@ class ControlSpecs:
     control_scheme: str
 
 @dataclass
+class DegradationSpecs:
+    # Semi-empirical aging parameters (defaults for LFP/NMC)
+    # L = L_cal + L_cyc
+    # L_cal = A * exp(-Ea / RT) * t^0.5
+    # L_cyc = B * EFC
+    calendar_a: float = 0.005 # scaling factor
+    activation_energy: float = 50000.0 # J/mol
+    gas_constant: float = 8.314
+    cycle_b: float = 0.00004 # 0.02 / 500 EFC? (2% loss per 500 cycles)
+
+@dataclass
 class BatterySpecs:
     battery_type: str
-    battery_life: str
+    battery_life: str # bol, eol, or custom
 
     # OCV data
     ocv_df: pd.DataFrame
@@ -78,6 +93,7 @@ class BatterySpecs:
     n_modules_in_a_string: int
     n_strings: int
     cell_capacity_ah: float
+    soh: float = 1.0
 
     dx: float = field(init=False)
     R: np.ndarray = field(init=False)
