@@ -1,2 +1,1 @@
-from .temperature import generate_ambient_temp_profile_for_a_day
 from .power import generate_power_profiles_for_a_day, process_custom_power_profile
