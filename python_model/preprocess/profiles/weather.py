@@ -14,7 +14,7 @@ from typing import Optional
 
 # Single cache file alongside data/
 _CACHE_FILE = Path(__file__).parent.parent.parent / "data" / "weather_cache.json"
-_MAX_CACHE_ENTRIES = 50
+_MAX_CACHE_ENTRIES = 5000
 
 
 @dataclass
