@@ -5,14 +5,14 @@ ambient_temperature: 25
 n_cycles: 1
 max_charge_rate: 0.23
 max_discharge_rate: 0.25
-battery_type: catl_306           # eve_306, catl_306
-battery_life: bol                # bol, eol
+battery_type: eve_306           # eve_306, catl_306
+battery_life: eol                # bol, eol
 chiller_model: bergstrom_55kw_c/2 # envicool_55kw_c/4  or envicool_55kw_c/2   or
                                  # bergstrom_55kw_c/4 or bergstrom_55kw_c/2
 
 chiller_noise_kit: False         # True/False
 
-location: "London"
+location: "herndon"
 month: 4
 
 control_scheme: battery_temp_control

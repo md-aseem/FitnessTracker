@@ -18,6 +18,8 @@ batteries:
 
   eve_306:
     ocv_path: data/ocv/eve_306.csv
+    heat_gen_dir: data/heat_gen
+    capacity_ah: 306
     thermal:
       heat_capacity_j_per_kgk: 1050
       thermal_conductivity_w_per_mk: 1.4

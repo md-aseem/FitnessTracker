@@ -30,7 +30,8 @@ class HistoricalWeatherData:
 
 
 def _cache_key(location: str, month: int) -> str:
-    return f"{location.lower().strip()}:{month}"
+    # Suffix :avg3y ensures we don't use old single-year cached data
+    return f"{location.lower().strip()}:{month}:avg3y"
 
 
 def _load_cache() -> dict:
@@ -125,34 +126,49 @@ def _geocode(location_str: str) -> Optional[tuple[float, float, str]]:
 
 
 def _fetch_weather(lat: float, lon: float, month: int):
-    """Fetch hourly temperature and radiation from Open-Meteo for a single representative day.
+    """Fetch hourly temperature and radiation from Open-Meteo for the same day (15th)
+    averaged over the last 3 years (2023, 2024, 2025).
 
-    Uses the 15th of the given month (2023) as the representative day.
     Returns (hourly_temp_24h, hourly_radiation_24h) or (None, None) on failure.
     """
-    try:
-        date = f"2023-{month:02d}-15"
-        url = (f"https://archive-api.open-meteo.com/v1/archive?"
-               f"latitude={lat}&longitude={lon}"
-               f"&start_date={date}&end_date={date}"
-               f"&hourly=temperature_2m,shortwave_radiation"
-               f"&timezone=auto")
+    years = [2023, 2024, 2025]
+    all_temps = []
+    all_rads = []
 
-        with urllib.request.urlopen(url) as response:
-            data = json.loads(response.read().decode())
+    print(f"    Fetching data for years: {years}")
 
-            hourly = data.get("hourly", {})
+    for year in years:
+        try:
+            date = f"{year}-{month:02d}-15"
+            url = (f"https://archive-api.open-meteo.com/v1/archive?"
+                   f"latitude={lat}&longitude={lon}"
+                   f"&start_date={date}&end_date={date}"
+                   f"&hourly=temperature_2m,shortwave_radiation"
+                   f"&timezone=auto")
 
-            temps = hourly.get("temperature_2m", [])
-            hourly_temp = np.array([t if t is not None else 25.0 for t in temps[:24]])
+            with urllib.request.urlopen(url) as response:
+                data = json.loads(response.read().decode())
+                hourly = data.get("hourly", {})
 
-            rads = hourly.get("shortwave_radiation", [])
-            hourly_rad = np.array([r if r is not None else 0.0 for r in rads[:24]])
+                temps = hourly.get("temperature_2m", [])
+                if temps:
+                    all_temps.append(np.array([t if t is not None else 25.0 for t in temps[:24]]))
 
-        return hourly_temp, hourly_rad
-    except Exception as e:
-        print(f"Open-Meteo fetch error: {e}")
+                rads = hourly.get("shortwave_radiation", [])
+                if rads:
+                    all_rads.append(np.array([r if r is not None else 0.0 for r in rads[:24]]))
+
+        except Exception as e:
+            print(f"    Open-Meteo fetch error for {year}: {e}")
+
+    if not all_temps or not all_rads:
         return None, None
+
+    # Average across successful years
+    avg_temp = np.mean(all_temps, axis=0)
+    avg_rad = np.mean(all_rads, axis=0)
+
+    return avg_temp, avg_rad
 
 
 def fetch_historical_weather(location: str, month: int) -> Optional[HistoricalWeatherData]:
@@ -170,7 +186,7 @@ def fetch_historical_weather(location: str, month: int) -> Optional[HistoricalWe
         print(f"  Peak Radiation: {np.max(cached.hourly_radiation):.1f} W/m2")
         return cached
 
-    print(f"Fetching historical weather data for {location}, month {month}...")
+    print(f"Fetching historical weather data (3-year average) for {location}, month {month}...")
 
     geo = _geocode(location)
     if not geo:

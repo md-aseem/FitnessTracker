@@ -8,9 +8,12 @@ from python_model.preprocess.profiles.power import generate_power_profiles_from_
 from python_model.preprocess.profiles.weather import fetch_historical_weather
 from python_model.preprocess.builders.battery import build_battery_specs
 
-def load_operation_specs() -> OperationalSpecs:
+def load_operation_specs(month_override: int = None) -> OperationalSpecs:
     input_config = load_input_config()
     library_data = load_library_data()
+
+    # Use override if provided, else use config
+    sim_month = month_override if month_override is not None else input_config.month
 
     # Load Battery Specs to access OCV Curve and other properties
     batt_specs = build_battery_specs(input_config, library_data)
@@ -69,8 +72,8 @@ def load_operation_specs() -> OperationalSpecs:
     total_steps = int(SECONDS_IN_DAY / dt) + 1
     time_s = np.arange(total_steps) * dt
 
-    if input_config.location and input_config.month:
-         weather = fetch_historical_weather(input_config.location, input_config.month)
+    if input_config.location and sim_month:
+         weather = fetch_historical_weather(input_config.location, sim_month)
          if weather is not None:
               # Interpolate hourly data (24 values) to simulation timestep
               hourly_times = np.arange(24) * 3600  # 0, 3600, 7200, ... 82800
