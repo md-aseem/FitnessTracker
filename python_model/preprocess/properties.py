@@ -99,7 +99,7 @@ class BatterySpecs:
     R: np.ndarray = field(init=False)
 
     def __post_init__(self):
-        self.dx = self.thickness / 7
+        self.dx = self.thickness / 7 # todo: we are creating 7 nodes across the thickness, not height?
         self.R = np.array([
             self.area * (1 / ((1 / self.coldPlateUA) + ((self.dx / 2) / self.k))),
             self.area * self.k / self.dx,

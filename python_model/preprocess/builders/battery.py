@@ -36,13 +36,13 @@ def build_battery_specs(input_config: InputConfig,
         soh=soh,
         ocv_df=ocv_df,
         heat_gen_df=heat_gen_df,
-        mass=25600.0, # 80.0 modules * 320.0 mass per module?
+        mass=10*80*52*6.15, # 10 strings * 8 modules * 52 cells in a module * 6.15 kg per cell
         cp=990.0,
         k=9.0, # top to bottom conductivity?
-        area=80.0,
+        area=80.0, # 10 strings * 8 modules * 1 m^2 area of the top of each module?
         thickness=0.204,
-        topUA=15.0, # how?
-        coldPlateUA=666.67, # 20000.0 / 30.0 how?
+        topUA=15.0, # todo: how?
+        coldPlateUA=666.67, # todo: 20000.0 / 30.0 how?
         initial_temperature=input_config.initial_battery_temp,
         soc_init=input_config.soc_init,
         total_energy=current_energy,
