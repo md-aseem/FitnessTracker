@@ -18,10 +18,12 @@ class SimulationAnnual:
     Handles parallel execution of monthly thermal simulations and generates annual reports.
     Supports SOH overrides for multi-year simulations.
     """
-    def __init__(self, n_workers=None):
+    def __init__(self, n_workers=None, months=None):
         self.n_workers = n_workers
+        self.months = months if months is not None else list(range(1, 13))
         self.config = load_input_config()
         self.location = self.config.location if self.config.location else "Default Location"
+        self._executor = None
         
         # Pre-cache weather data sequentially in the main process to avoid 
         # parallel API hits and race conditions on the cache file.
@@ -31,7 +33,7 @@ class SimulationAnnual:
         """Sequential weather fetch to populate cache before parallel workers start."""
         if self.location and self.location != "Default Location":
             print(f"Ensuring weather data for {self.location} is cached...")
-            for month in range(1, 13):
+            for month in self.months:
                 # fetch_historical_weather checks cache internally
                 fetch_historical_weather(self.location, month)
 
@@ -77,30 +79,37 @@ class SimulationAnnual:
 
     def run(self, soh=1.0):
         """
-        Executes simulations for all 12 months in parallel and aggregates yearly metrics.
+        Executes simulations for the configured months in parallel and aggregates metrics.
         """
-        print(f"Starting annual simulation for {self.location} (SOH={soh:.3f})...")
-        months = list(range(1, 13))
-        
-        with ProcessPoolExecutor(max_workers=self.n_workers) as executor:
-            task_func = partial(self._run_month_task, soh=soh)
-            results = list(executor.map(task_func, months))
+        start_run = time.time()
+        print(f"Starting simulation for {self.location} ({len(self.months)} months, SOH={soh:.3f})...")
+        months = self.months
+
+        if self._executor is None:
+            self._executor = ProcessPoolExecutor(max_workers=self.n_workers)
+            
+        task_func = partial(self._run_month_task, soh=soh)
+        results = list(self._executor.map(task_func, months))
             
         results.sort(key=lambda x: x['month'])
         self._generate_outputs(results)
         summary = self._aggregate_year_metrics(results)
         
-        print(f"Annual simulation complete. Avg Temp: {summary['avg_temp_c']:.2f}C, Avg Discharge C-Rate: {summary['avg_discharge_c']:.3f}")
+        total_time = time.time() - start_run
+        print(f"Annual simulation complete in {total_time:.2f}s. Avg Temp: {summary['avg_temp_c']:.2f}C, Avg Discharge C-Rate: {summary['avg_discharge_c']:.3f}")
         return {**summary, 'results': results}
 
     def _aggregate_year_metrics(self, results):
         DAYS_IN_MONTH = 30.4375
+
         avg_temp = np.mean([r['avg_batt_temp'] for r in results])
         max_temp = np.mean([r['max_batt_temp'] for r in results])
         max_soc = np.max([r['max_soc'] for r in results])
         avg_discharge_c = np.mean([r['avg_discharge_c'] for r in results])
+        
         total_ah = sum([r['ah_throughput'] * DAYS_IN_MONTH for r in results])
         total_energy = sum([r['total_aux_energy_kwh'] * DAYS_IN_MONTH for r in results])
+        
         avg_cp_rate = total_ah / (306.0 * 8760.0)
         
         return {
@@ -128,6 +137,12 @@ class SimulationAnnual:
         ax2.grid(axis='y', linestyle='--', alpha=0.7)
         plt.tight_layout()
         plt.savefig('results/annual_summary_results.png')
+
+    def shutdown(self):
+        """Shuts down the persistent process pool."""
+        if self._executor:
+            self._executor.shutdown()
+            self._executor = None
 
 if __name__ == "__main__":
     SimulationAnnual().run()
