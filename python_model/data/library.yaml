@@ -84,11 +84,6 @@ containers:
   quantum_3p0:
     container_wall_area: 71.91 # m^2
 
-#hvac:
-#  UA: 2.0
-#  temperature_target: 40 # Question: should it be here?
-#  hysteresis: 20.0 # Question: why?
-
 # constants
 circulation_time_limit: 120.0 # seconds
 temp_stable: 3.0 # Stability threshold
