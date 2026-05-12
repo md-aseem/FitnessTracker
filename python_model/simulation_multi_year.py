@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from python_model.simulation_annual import SimulationAnnual
 from python_model.preprocess.aging import DegradationModel
 from python_model.preprocess.loaders import load_input_config
+import time
 
 class SimulationMultiYear:
     """
@@ -21,12 +22,14 @@ class SimulationMultiYear:
 
     def run(self):
         """Runs the simulation sequentially for N years."""
+        start_time = time.time()
         print(f"=== Starting Multi-Year Simulation for {self.location} ({self.n_years} years) ===")
         
         current_soh = self.config.soh_init
         history = []
         
         for year in range(1, self.n_years + 1):
+            year_start = time.time()
             print(f"\n--- Year {year} | SOH: {current_soh:.4f} ---")
             
             # 1. Simulate the Year
@@ -47,10 +50,13 @@ class SimulationMultiYear:
                 max_soc=year_metrics['max_soc'],
                 time_hours=8760.0
             )
+            print(f"Year {year} complete in {time.time() - year_start:.2f}s")
             
-        print(f"\n=== Simulation Complete | Final SOH: {current_soh:.4f} ===")
+        total_time = time.time() - start_time
+        print(f"\n=== Simulation Complete | Final SOH: {current_soh:.4f} | Total Time: {total_time:.2f}s ===")
         
         self._generate_summary(history)
+        self.sim_annual.shutdown()
         return history
 
     def _generate_summary(self, history):
