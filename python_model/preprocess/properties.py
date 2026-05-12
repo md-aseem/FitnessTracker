@@ -158,7 +158,6 @@ class EnvironmentSpecs:
 class ContainerSpecs:
     container_wall_area: float
     radiation_surface_prcnt: float
-    container_wall_UA: float
     container_wall_prcnt_steel: float
 
 @dataclass
