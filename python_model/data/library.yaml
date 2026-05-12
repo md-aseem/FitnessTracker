@@ -70,7 +70,7 @@ containers:
     steel_wall:
       percent_total_area: 0.3
       thickness: 0.040
-      density: 1958.25 # 7833.0/4.0
+      density: 1958.25 # todo: why not the density of steel i.e. 7850? # 7833.0/4.0
       conductivity: 50.0
       cp: 465.0
 
@@ -84,10 +84,10 @@ containers:
   quantum_3p0:
     container_wall_area: 71.91 # m^2
 
-hvac:
-  UA: 2.0
-  temperature_target: 40 # Question: should it be here?
-  hysteresis: 20.0 # Question: why?
+#hvac:
+#  UA: 2.0
+#  temperature_target: 40 # Question: should it be here?
+#  hysteresis: 20.0 # Question: why?
 
 # constants
 circulation_time_limit: 120.0 # seconds
