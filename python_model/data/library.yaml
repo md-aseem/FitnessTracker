@@ -3,29 +3,10 @@ batteries:
     ocv_path: data/ocv/catl_306.csv
     heat_gen_dir: data/heat_gen
     capacity_ah: 306
-    physical:
-      mass_kg: 80 * 320 # kg, mass of all batteries in Q3.0 # Question: why Q3 mass in Q2 model?
-      cp: 990
-      k: 9.0
-      area: 80 * 1 # Question: which area? top area I assume?
-      height: 0.204
-      bottomUA: 100.0
-      topUA: 15.0
-      total_container_energy: 3.47 * 52 * 80 * 304 # Question: max_volts * n_cells_in_a_module * n_modules_in_a_container * capacity_ah?
-      # ambiguous quantities
-      hysteresis: 1.0
-      temperature_target: 20 # Question: this should be here?
-
   eve_306:
     ocv_path: data/ocv/eve_306.csv
     heat_gen_dir: data/heat_gen
     capacity_ah: 306
-    thermal:
-      heat_capacity_j_per_kgk: 1050
-      thermal_conductivity_w_per_mk: 1.4
-    geometry:
-      mass_kg: 0.92
-
 
 chillers:
   envicool_55kw_c/4:
