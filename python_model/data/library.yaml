@@ -28,7 +28,7 @@ batteries:
 
 
 chillers:
-  envicool_q2_55kw_c/4:
+  envicool_55kw_c/4:
     chiller_curves_dir: data/chiller_performance/quantum_2p0
     battery_sensitivity: 3.0
     inverter_sensitivity: 30.0
@@ -38,7 +38,7 @@ chillers:
     comp_aux_cap: 0.71
     cooling_power_coef: 0.818
 
-  envicool_q2_55kw_c/2:
+  envicool_55kw_c/2:
     chiller_curves_dir: data/chiller_performance/quantum_2p0
     battery_sensitivity: 3.0
     inverter_sensitivity: 30.0
