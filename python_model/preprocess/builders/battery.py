@@ -36,7 +36,7 @@ def build_battery_specs(input_config: InputConfig,
         soh=soh,
         ocv_df=ocv_df,
         heat_gen_df=heat_gen_df,
-        mass=10*80*52*6.15, # 10 strings * 8 modules * 52 cells in a module * 6.15 kg per cell
+        mass=10*8*52*6.15, # 10 strings * 8 modules * 52 cells in a module * 6.15 kg per cell
         cp=990.0,
         k=9.0, # top to bottom conductivity?
         area=80.0, # 10 strings * 8 modules * 1 m^2 area of the top of each module?
