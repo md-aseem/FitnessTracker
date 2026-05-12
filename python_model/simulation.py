@@ -193,9 +193,18 @@ class Simulation:
             sp.b_coolant_target, sp.battery_cool_min, sp.battery_heat_min, 
             sp.battery_heat_target, sp.battery_heat_max, sp.battery_heat_exit, sp.chiller_setpoint
         )
+        # Pre-calculate chiller cooling power profiles (Vectorized)
+        chiller_pwr_18c_profile = np.interp(
+            self.ambient_temp_profile, self._chiller_amb_18, self._chiller_pwr_18
+        ) if self._chiller_amb_18.size > 0 else np.zeros_like(self.ambient_temp_profile)
+        
+        chiller_pwr_23c_profile = np.interp(
+            self.ambient_temp_profile, self._chiller_amb_23, self._chiller_pwr_23
+        ) if self._chiller_amb_23.size > 0 else np.zeros_like(self.ambient_temp_profile)
+
         profile_specs = ProfileSpecs(
             self.current_profile, self.ambient_temp_profile, self.cell_heat_gen_profile, self.radiation_heat_load,
-            self._chiller_amb_18, self._chiller_pwr_18, self._chiller_amb_23, self._chiller_pwr_23
+            chiller_pwr_18c_profile, chiller_pwr_23c_profile
         )
         thermal_state = ThermalState(
             self.internal_air_temp, self.steel_walls_temp, self.insulation_walls_temp, self.battery_temp,

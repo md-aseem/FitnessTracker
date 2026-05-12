@@ -24,7 +24,7 @@ SetpointSpecs = namedtuple('SetpointSpecs', [
 ])
 ProfileSpecs = namedtuple('ProfileSpecs', [
     'current', 'ambient', 'heat_gen', 'radiation', 
-    'chiller_18c_ambient', 'chiller_18c_power', 'chiller_23c_ambient', 'chiller_23c_power'
+    'chiller_pwr_18c_profile', 'chiller_pwr_23c_profile'
 ])
 ThermalState = namedtuple('ThermalState', [
     'internal_air', 'steel_walls', 'insulation_walls', 'battery', 
@@ -81,10 +81,8 @@ spec = [
     ('amb_temp_profile', float64[:]),
     ('cell_heat_gen_profile', float64[:]),
     ('radiation_heat_load', float64[:]),
-    ('chiller_ambient_18c', float64[:]),
-    ('chiller_power_18c', float64[:]),
-    ('chiller_ambient_23c', float64[:]),
-    ('chiller_power_23c', float64[:]),
+    ('chiller_pwr_18c_profile', float64[:]),
+    ('chiller_pwr_23c_profile', float64[:]),
 
     # State Arrays
     ('internal_air_temp', float64[:]),
@@ -160,10 +158,8 @@ class ThermalSolver:
         self.amb_temp_profile = profiles.ambient
         self.cell_heat_gen_profile = profiles.heat_gen
         self.radiation_heat_load = profiles.radiation
-        self.chiller_ambient_18c = profiles.chiller_18c_ambient
-        self.chiller_power_18c = profiles.chiller_18c_power
-        self.chiller_ambient_23c = profiles.chiller_23c_ambient
-        self.chiller_power_23c = profiles.chiller_23c_power
+        self.chiller_pwr_18c_profile = profiles.chiller_pwr_18c_profile
+        self.chiller_pwr_23c_profile = profiles.chiller_pwr_23c_profile
 
         # Unbundle Thermal State
         self.internal_air_temp = thermal.internal_air
@@ -319,9 +315,8 @@ class ThermalSolver:
 
     def update_chiller_condition(self, i):
         if self.compressor_on_off[i] == ON:
-            ambient = self.amb_temp_profile[i]
-            chiller_cooling_power_18c = np.interp(ambient, self.chiller_ambient_18c, self.chiller_power_18c) if self.chiller_ambient_18c.size > 0 else 0.0
-            chiller_cooling_power_23c = np.interp(ambient, self.chiller_ambient_23c, self.chiller_power_23c) if self.chiller_ambient_23c.size > 0 else 0.0
+            chiller_cooling_power_18c = self.chiller_pwr_18c_profile[i]
+            chiller_cooling_power_23c = self.chiller_pwr_23c_profile[i]
             
             heat_into_cold_plate_prev = self.heat_into_cold_plate[i-1]
             target = self.chiller_setpoint if -heat_into_cold_plate_prev <= chiller_cooling_power_18c else \
