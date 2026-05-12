@@ -8,9 +8,11 @@ from python_model.preprocess.profiles.power import generate_power_profiles_from_
 from python_model.preprocess.profiles.weather import fetch_historical_weather
 from python_model.preprocess.builders.battery import build_battery_specs
 
-def load_operation_specs(month_override: int = None) -> OperationalSpecs:
-    input_config = load_input_config()
-    library_data = load_library_data()
+def load_operation_specs(month_override: int = None, input_config=None, library_data=None) -> OperationalSpecs:
+    if input_config is None:
+        input_config = load_input_config()
+    if library_data is None:
+        library_data = load_library_data()
 
     # Use override if provided, else use config
     sim_month = month_override if month_override is not None else input_config.month

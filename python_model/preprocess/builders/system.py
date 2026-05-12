@@ -6,10 +6,12 @@ from .walls import build_wall_specs
 from .container import build_container_specs
 from .setpoints import build_setpoints
 
-def build_system_specs() -> SystemSpecs:
+def build_system_specs(input_config=None, library_data=None) -> SystemSpecs:
 
-    input_config = load_input_config()
-    library_data = load_library_data()
+    if input_config is None:
+        input_config = load_input_config()
+    if library_data is None:
+        library_data = load_library_data()
 
     battery_specs = build_battery_specs(input_config, library_data)
     chiller_specs = build_chiller_specs(input_config, library_data)

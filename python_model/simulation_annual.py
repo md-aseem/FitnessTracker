@@ -4,7 +4,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import time
 from functools import partial
-from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures import ProcessPoolExecutor, ThreadPoolExecutor
 
 from python_model.simulation import Simulation
 from python_model.preprocess.builders.system import build_system_specs
@@ -22,7 +22,9 @@ class SimulationAnnual:
         self.n_workers = n_workers
         self.months = months if months is not None else list(range(1, 13))
         self.config = load_input_config()
+        self.library_data = load_library_data()
         self.location = self.config.location if self.config.location else "Default Location"
+        self.system_specs = build_system_specs(self.config, self.library_data)
         self._executor = None
         
         # Pre-cache weather data sequentially in the main process to avoid 
@@ -38,22 +40,22 @@ class SimulationAnnual:
                 fetch_historical_weather(self.location, month)
 
     @staticmethod
-    def _run_month_task(month, soh=1.0):
+    def _run_month_task(month, soh, input_config, library_data, system_specs):
         """
         Static task function for ProcessPoolExecutor.
         Runs a single day simulation for the 15th of the month.
         """
-        input_config = load_input_config()
-        library_data = load_library_data()
-        
-        # 1. Build specs with specific SOH
+        # 1. Update specs with specific SOH
+        # Note: system_specs is passed in, we just override the battery part for SOH
         battery_specs = build_battery_specs(input_config, library_data, soh=soh)
-        system_specs = build_system_specs()
         system_specs.battery_specs = battery_specs 
         
         # 2. Generate operational profile for the month
-        # This will now hit the cache populated by the main process
-        operational_specs = load_operation_specs(month_override=month)
+        operational_specs = load_operation_specs(
+            month_override=month, 
+            input_config=input_config, 
+            library_data=library_data
+        )
         
         # 3. Execute Simulation
         sim = Simulation(system_specs, operational_specs)
@@ -88,7 +90,13 @@ class SimulationAnnual:
         if self._executor is None:
             self._executor = ProcessPoolExecutor(max_workers=self.n_workers)
             
-        task_func = partial(self._run_month_task, soh=soh)
+        task_func = partial(
+            self._run_month_task, 
+            soh=soh, 
+            input_config=self.config, 
+            library_data=self.library_data,
+            system_specs=self.system_specs
+        )
         results = list(self._executor.map(task_func, months))
             
         results.sort(key=lambda x: x['month'])
