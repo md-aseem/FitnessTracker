@@ -315,8 +315,8 @@ class ThermalSolver:
 
     def update_chiller_condition(self, i):
         if self.compressor_on_off[i] == ON:
-            chiller_cooling_power_18c = self.chiller_pwr_18c_profile[i]
-            chiller_cooling_power_23c = self.chiller_pwr_23c_profile[i]
+            chiller_cooling_power_18c = self.chiller_pwr_18c_profile[i] * self.cooling_power_coef
+            chiller_cooling_power_23c = self.chiller_pwr_23c_profile[i] * self.cooling_power_coef
             
             heat_into_cold_plate_prev = self.heat_into_cold_plate[i-1]
             target = self.chiller_setpoint if -heat_into_cold_plate_prev <= chiller_cooling_power_18c else \

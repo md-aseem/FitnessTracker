@@ -137,7 +137,9 @@ class SimulationAnnual:
         ax1.set_title(f'Monthly Average Battery Temperature ({self.location})')
         ax1.set_xticks(months)
         ax1.grid(axis='y', linestyle='--', alpha=0.7)
-        ax2.bar(months, [r['total_aux_energy_kwh'] for r in results], color='salmon')
+        
+        # 2. Aux Energy
+        ax2.bar(months, [r['total_aux_energy_kwh'] for r in results], color='salmon', alpha=0.8)
         ax2.set_ylabel('Total Aux Energy (kWh)')
         ax2.set_xlabel('Month')
         ax2.set_title(f'Monthly Total Auxiliary Energy Consumption ({self.location})')

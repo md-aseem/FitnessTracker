@@ -177,6 +177,7 @@ class Simulation:
         c_spec = sys.chiller_specs
         sp = sys.setpoints
 
+        print(f"Chiller Coef: {c_spec.cooling_power_coef}")
         steel_inv_cap = self.dt / (s_wall.mass * s_wall.cp / 7.0)
         insul_inv_cap = self.dt / (i_wall.mass * i_wall.cp / 7.0)
         batt_inv_cap = self.dt / (b_spec.mass * b_spec.cp / 7.0)
@@ -294,30 +295,30 @@ class Simulation:
         self.aux_load_energy = np.sum(aux_load_current_power) * self.dt
         
         # Bucketing Logic
-        # 1. OPERATING
-        is_operating = current_sq > 0.001
+        # 1. OPERATING (Current > 0.01A)
+        is_operating = np.abs(self.current_profile) > 0.01
         self.operating_aux_energy = np.sum(total_instant_power[is_operating]) * self.dt
         self.time_spent_operating = np.sum(is_operating) * self.dt
-        # Note: batt_ave_temp logic was accumulating self.dt * temp. 
-        # So average = sum(temp * dt) / total_time? Or just sum(temp * dt)?
-        # Original: self.batt_ave_temp_operating += bat_temp_top * self.dt
-        # So it is the time-integral of temperature.
         self.batt_ave_temp_operating = np.sum(self.battery_temp[is_operating, 6]) * self.dt
+        self.avg_temp_operating = np.mean(self.battery_temp[is_operating, 6]) if np.any(is_operating) else 0.0
         
-        # 2. RESTING (Not operating AND temp > cutoff)
-        bat_temp_top = self.battery_temp[:, 6]
-        is_resting = (~is_operating) & (bat_temp_top > self.idle_rest_cutoff_temp)
-        
+        # 2. RESTING (All non-operating: Current <= 0.01A)
+        is_resting = ~is_operating
         self.resting_aux_energy = np.sum(total_instant_power[is_resting]) * self.dt
         self.time_spent_resting = np.sum(is_resting) * self.dt
-        self.batt_ave_temp_not_operating += np.sum(bat_temp_top[is_resting]) * self.dt
+        self.avg_temp_resting = np.mean(self.battery_temp[is_resting, 6]) if np.any(is_resting) else 0.0
         
-        # 3. IDLING (Not operating AND temp <= cutoff)
-        is_idling = (~is_operating) & (~is_resting) # Remaining
+        # 3. IDLING (Resting AND temp < cutoff)
+        bat_temp_top = self.battery_temp[:, 6]
+        is_idling = is_resting & (bat_temp_top < self.idle_rest_cutoff_temp)
         
         self.idling_aux_energy = np.sum(total_instant_power[is_idling]) * self.dt
         self.time_spent_idling = np.sum(is_idling) * self.dt
-        self.batt_ave_temp_not_operating += np.sum(bat_temp_top[is_idling]) * self.dt
+        self.avg_temp_idling = np.mean(bat_temp_top[is_idling]) if np.any(is_idling) else 0.0
+        
+        # Legacy tracking (accumulating for all non-op)
+        self.batt_ave_temp_not_operating = np.sum(bat_temp_top[is_resting]) * self.dt
+        
         self.peak_aux_power = np.max(total_instant_power)
         self.cumulative_aux_energy_history = np.cumsum(total_instant_power) * self.dt / 3600.0 # Wh
 
@@ -325,7 +326,7 @@ class Simulation:
     def plot_results(self):
         time_hours = self.time_s / 3600.0
         
-        fig, axs = plt.subplots(4, 1, figsize=(12, 16), sharex=True)
+        fig, axs = plt.subplots(6, 1, figsize=(12, 24))
         
         # 1. Temperatures
         axs[0].plot(time_hours, self.battery_temp[:, 6], label='Battery Top Temp')
@@ -333,8 +334,27 @@ class Simulation:
         axs[0].plot(time_hours, self.ambient_temp_profile, label='Ambient Temp', alpha=0.6)
         axs[0].set_ylabel('Temperature (°C)')
         axs[0].set_title('System Temperatures')
-        axs[0].legend()
+        axs[0].legend(loc='upper left')
         axs[0].grid(True)
+        
+        # Add Horizontal Reference Lines for Averages
+        max_time = time_hours[-1]
+        for val, label, color in [
+            (self.avg_temp_operating, 'Avg Op', 'tab:red'),
+            (self.avg_temp_resting, 'Avg Rest', 'tab:green'),
+            (self.avg_temp_idling, 'Avg Idle', 'tab:blue')
+        ]:
+            if val > 0:
+                axs[0].axhline(y=val, color=color, linestyle=':', alpha=0.7)
+                axs[0].text(max_time * 1.01, val, f'{label}: {val:.1f}°C', 
+                            color=color, va='bottom', fontweight='bold', fontsize=9)
+        
+        # Expand X limit slightly for labels
+        axs[0].set_xlim(right=max_time * 1.12)
+        
+        # Helper to share X axis for the first 4 plots
+        for i in range(1, 4):
+            axs[i].sharex(axs[0])
         
         # 2. Electrical (Current & SOC)
         ax2 = axs[1]
