@@ -319,6 +319,7 @@ class Simulation:
         self.time_spent_idling = np.sum(is_idling) * self.dt
         self.batt_ave_temp_not_operating += np.sum(bat_temp_top[is_idling]) * self.dt
         self.peak_aux_power = np.max(total_instant_power)
+        self.cumulative_aux_energy_history = np.cumsum(total_instant_power) * self.dt / 3600.0 # Wh
 
 
     def plot_results(self):
@@ -347,10 +348,20 @@ class Simulation:
         axs[1].set_title('Electrical Stats')
         
         # 3. Aux Power
-        axs[2].plot(time_hours, self.total_aux_power, label='Total Aux Power', color='red')
-        axs[2].set_ylabel('Power (W)')
+        axs[2].plot(time_hours, self.total_aux_power, label='Total Aux Power', color='red', alpha=0.8)
+        axs[2].set_ylabel('Power (W)', color='red')
+        axs[2].tick_params(axis='y', labelcolor='red')
         axs[2].set_title('Auxiliary Power Consumption')
-        axs[2].legend()
+        
+        ax3_right = axs[2].twinx()
+        ax3_right.plot(time_hours, self.cumulative_aux_energy_history, label='Cumulative Aux (Wh)', color='darkred', linestyle='--')
+        ax3_right.set_ylabel('Energy (Wh)', color='darkred')
+        ax3_right.tick_params(axis='y', labelcolor='darkred')
+        
+        # Combine legends
+        lines, labels = axs[2].get_legend_handles_labels()
+        lines2, labels2 = ax3_right.get_legend_handles_labels()
+        axs[2].legend(lines + lines2, labels + labels2, loc='upper left')
         axs[2].grid(True)
         
         # 4. Chiller State
@@ -391,6 +402,7 @@ class Simulation:
             'heat_from_walls_to_air_w': self.heat_from_walls_to_air,
             'heat_from_battery_to_air_w': self.heat_from_battery_to_air,
             'radiation_load_w': self.radiation_heat_load,
+            'cumulative_aux_energy_wh': self.cumulative_aux_energy_history,
         })
         os.makedirs(os.path.dirname(filename), exist_ok=True)
         df.to_csv(filename, index=False)
