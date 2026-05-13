@@ -30,7 +30,7 @@ class InputConfig(BaseModel):
     custom_power_profile_path: str = None
     hvac_present: bool = False
 
-    cycles: list = []
+    cycles: list | None = []
 
     # Simulation Lifetime
     n_years: int = 1

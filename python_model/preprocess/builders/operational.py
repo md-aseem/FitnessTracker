@@ -31,6 +31,8 @@ def load_operation_specs(month_override: int = None, input_config=None, library_
     # User requested to always start with charge (StateMachine handles full battery case)
     start_with_charge = True
 
+    cycles_list = [c for c in input_config.cycles if c is not None] if input_config.cycles is not None else []
+
     if input_config.custom_power_profile_path:
         # Load Custom Profile
         profile_path = Path(input_config.custom_power_profile_path)
@@ -47,9 +49,9 @@ def load_operation_specs(month_override: int = None, input_config=None, library_
             soc_init=input_config.soc_init,
             dt=dt
         )
-    elif input_config.cycles:
+    elif cycles_list:
         time_s, soc, current, power_watts = generate_power_profiles_from_cycles(
-            cycles=input_config.cycles,
+            cycles=cycles_list,
             charge_rate=charge_rate,
             discharge_rate=discharge_rate,
             total_energy=battery_energy,
