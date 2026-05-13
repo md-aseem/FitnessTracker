@@ -11,7 +11,6 @@ class InputConfig(BaseModel):
     quantum: Literal["2p0", "3p0", "2p1"]
 
     ## operational
-    n_cycles: int
 
     ambient_temperature: float
     initial_battery_temp: float
@@ -20,8 +19,6 @@ class InputConfig(BaseModel):
     battery_type: str
     battery_life: str
     chiller_model: str
-    chiller_noise_kit: bool
-    control_scheme: str
 
     location: str = None
     month: int = None
@@ -31,8 +28,8 @@ class InputConfig(BaseModel):
     
     # Custom Profile
     custom_power_profile_path: str = None
-
     hvac_present: bool = False
+
     cycles: list = []
 
     # Simulation Lifetime
