@@ -11,7 +11,7 @@ class InputConfig(BaseModel):
     quantum: Literal["2p0", "3p0", "2p1"]
 
     ## operational
-
+    n_cycles: int
     ambient_temperature: float
     initial_battery_temp: float
     max_charge_rate: float

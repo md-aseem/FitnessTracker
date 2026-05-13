@@ -2,6 +2,7 @@ quantum: 2p0
 ambient_temperature: 25
 
 # operational
+n_cycles: 1
 cycles:
   - start_time: 8.0
     target_soc1: 0.95

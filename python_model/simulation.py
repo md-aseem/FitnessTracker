@@ -177,15 +177,11 @@ class Simulation:
         c_spec = sys.chiller_specs
         sp = sys.setpoints
 
-        print(f"Chiller Coef: {c_spec.cooling_power_coef}")
         steel_inv_cap = self.dt / (s_wall.mass * s_wall.cp / 7.0)
         insul_inv_cap = self.dt / (i_wall.mass * i_wall.cp / 7.0)
-        print(f"Mass: {b_spec.mass}, CP: {b_spec.cp}")
         batt_inv_cap = self.dt / (b_spec.mass * b_spec.cp / 7.0)
 
         # Create Data Structures for Solver
-        print(f"Cells: {b_spec.n_cells}, Total Heat Sample: {self.cell_heat_gen_profile[0] * b_spec.n_cells}")
-        print(f"Inv Cap: {batt_inv_cap}")
         batt_specs = BatterySpecs(b_spec.R, batt_inv_cap, b_spec.n_cells, b_spec.cell_capacity_ah)
         steel_specs = WallSpecs(s_wall.R, steel_inv_cap)
         insul_specs = WallSpecs(i_wall.R, insul_inv_cap)
