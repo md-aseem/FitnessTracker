@@ -29,7 +29,6 @@ def build_chiller_specs(input_config: InputConfig, library_data) -> ChillerSpecs
 
     return ChillerSpecs(
         chiller_model=chiller_model,
-        chiller_noise_kit=input_config.chiller_noise_kit,
         chiller_curves_df=chiller_curves_df,
         battery_sensitivity= chiller_data['battery_sensitivity'],
         inverter_sensitivity= chiller_data['inverter_sensitivity'],

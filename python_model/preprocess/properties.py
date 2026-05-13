@@ -107,7 +107,6 @@ class BatterySpecs:
 @dataclass
 class ChillerSpecs:
     chiller_model: str
-    chiller_noise_kit: bool
     chiller_curves_df: pd.DataFrame
 
     battery_sensitivity: float
