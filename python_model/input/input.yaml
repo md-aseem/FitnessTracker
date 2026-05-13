@@ -15,13 +15,8 @@ battery_life: bol                # bol, eol
 chiller_model: bergstrom_55kw_c/2 # envicool_55kw_c/4  or envicool_55kw_c/2   or
                                  # bergstrom_55kw_c/4 or bergstrom_55kw_c/2
 
-chiller_noise_kit: False         # True/False
-
 location: "herndon"
 month: 4
-
-control_scheme: battery_temp_control
-
 
 # initialization
 soc_init: 0.01
