@@ -2,7 +2,12 @@ quantum: 2p0
 ambient_temperature: 25
 
 # operational
-n_cycles: 1
+cycles:
+  - start_time: 8.0
+    target_soc1: 0.95
+    wait_time: 1.0
+    target_soc2: 0.70
+
 max_charge_rate: 0.23
 max_discharge_rate: 0.25
 battery_type: eve_306           # eve_306, catl_306
@@ -25,14 +30,7 @@ soh_init: 1.0
 n_years: 20
 
 custom_power_profile_path: ""
-
 hvac_present: False
-
-cycles:
-  - start_time: 8.0
-    target_soc1: 0.95
-    wait_time: 1.0
-    target_soc2: 0.70
 
 #setpoints
 chiller_setpoint: 19 # C
