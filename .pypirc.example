@@ -1,0 +1,8 @@
+[distutils]
+index-servers =
+    gems-artifactory
+
+[gems-artifactory]
+repository = https://artifactory.tools.gems.energy/artifactory/api/pypi/python-local
+username = {YOUR_PIP_USERNAME}
+password = {YOUR_PIP_PASSWORD}
