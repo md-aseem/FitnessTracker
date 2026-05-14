@@ -87,14 +87,14 @@ def load_operation_specs(month_override: int = None, input_config=None, library_
               print("Warning: Historical weather fetch failed. Using defaults.")
               print(f"  Using constant ambient temperature: {input_config.ambient_temperature}°C")
               print("  Using NO radiation (0 W/m2)")
-              ambient_profile = np.full(total_steps, input_config.ambient_temperature)
-              radiation_profile = np.zeros(total_steps)
+              ambient_profile = np.full(total_steps, float(input_config.ambient_temperature), dtype=np.float64)
+              radiation_profile = np.zeros(total_steps, dtype=np.float64)
     else:
          print("No location/month provided.")
          print(f"  Using constant ambient temperature: {input_config.ambient_temperature}°C")
          print("  Using NO radiation (0 W/m2)")
-         ambient_profile = np.full(total_steps, input_config.ambient_temperature)
-         radiation_profile = np.zeros(total_steps)
+         ambient_profile = np.full(total_steps, float(input_config.ambient_temperature), dtype=np.float64)
+         radiation_profile = np.zeros(total_steps, dtype=np.float64)
 
     return OperationalSpecs(time_s=time_s,
                             soc_profile=soc,

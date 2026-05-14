@@ -1,6 +1,6 @@
 ### This file contains the logic to run the simulation. This is the heart of the model. ###
 from python_model.preprocess.builders import load_operation_specs
-from python_model.preprocess.properties import SystemSpecs, OperationalSpecs
+from python_model.preprocess.properties import SystemSpecs, OperationalSpecs, InputConfig
 from python_model.preprocess.builders.system import build_system_specs
 import os
 import numpy as np
@@ -87,16 +87,16 @@ class Simulation:
         self.compressor_on_off = np.full([self.n], self.OFF, dtype=np.int32)
         
         # Liquid Loop States
-        self.chiller_outlet_temp = np.full([self.n], initial_batt_temp) # Start with battery temp
-        self.chiller_inlet_temp = np.full([self.n], initial_batt_temp)
-        self.refrigerant_temp = np.full([self.n], initial_batt_temp) # Internal variable for chiller
+        self.chiller_outlet_temp = np.full([self.n], float(initial_batt_temp), dtype=np.float64) # Start with battery temp
+        self.chiller_inlet_temp = np.full([self.n], float(initial_batt_temp), dtype=np.float64)
+        self.refrigerant_temp = np.full([self.n], float(initial_batt_temp), dtype=np.float64) # Internal variable for chiller
         self.battery_stream_mass_flow = 0.0
         
         # HVAC & Dehumidifier
-        self.hvac_air_temp = np.full([self.n], initial_batt_temp) # ACC internal air temp? Or is it same as internal?
+        self.hvac_air_temp = np.full([self.n], float(initial_batt_temp), dtype=np.float64) # ACC internal air temp? Or is it same as internal?
         
-        self.hvac_cooling_power = np.zeros([self.n])
-        self.hvac_aux_power = np.zeros([self.n])
+        self.hvac_cooling_power = np.zeros([self.n], dtype=np.float64)
+        self.hvac_aux_power = np.zeros([self.n], dtype=np.float64)
         
         self.dehumidifier_on_time = np.zeros([self.n], dtype=np.float64)
         self.dehumidifier_aux_power = np.zeros([self.n], dtype=np.float64)
@@ -196,11 +196,11 @@ class Simulation:
         # Pre-calculate chiller cooling power profiles (Vectorized)
         chiller_pwr_18c_profile = np.interp(
             self.ambient_temp_profile, self._chiller_amb_18, self._chiller_pwr_18
-        ) if self._chiller_amb_18.size > 0 else np.zeros_like(self.ambient_temp_profile)
+        ) if self._chiller_amb_18.size > 0 else np.zeros_like(self.ambient_temp_profile, dtype=np.float64)
         
         chiller_pwr_23c_profile = np.interp(
             self.ambient_temp_profile, self._chiller_amb_23, self._chiller_pwr_23
-        ) if self._chiller_amb_23.size > 0 else np.zeros_like(self.ambient_temp_profile)
+        ) if self._chiller_amb_23.size > 0 else np.zeros_like(self.ambient_temp_profile, dtype=np.float64)
 
         profile_specs = ProfileSpecs(
             self.current_profile, self.ambient_temp_profile, self.cell_heat_gen_profile, self.radiation_heat_load,
@@ -428,6 +428,8 @@ class Simulation:
         print(f"Results saved to {filename}")
 
 if __name__ == "__main__":
+    # input_config = InputConfig(n_cycles=1, ambient_temperature=25, max_charge_rate=0.5, max_discharge_rate=0.5,
+    #                            battery_type="catl_306")
     system_specs = build_system_specs()
     operational_specs = load_operation_specs()
     sim = Simulation(system_specs, operational_specs)
