@@ -13,7 +13,7 @@ class InputConfig(BaseModel):
     ## operational
     n_cycles: int
     ambient_temperature: float
-    initial_battery_temp: float
+    initial_battery_temp: float = 20
     max_charge_rate: float
     max_discharge_rate: float
     battery_type: str
