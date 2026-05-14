@@ -189,9 +189,11 @@ class Simulation:
             c_spec.circulation_time_limit, c_spec.temp_stable, c_spec.battery_sensitivity, 
             c_spec.pump_aux_cap, c_spec.cooling_power_coef, c_spec.heater_heat, c_spec.bat_volume_flow_rate_lpm
         )
+        strategy_int = 1 if sp.cooling_strategy == "battery_based" else 0
         setpoint_specs = SetpointSpecs(
             sp.b_coolant_target, sp.battery_cool_min, sp.battery_heat_min, 
-            sp.battery_heat_target, sp.battery_heat_max, sp.battery_heat_exit, sp.chiller_setpoint
+            sp.battery_heat_target, sp.battery_heat_max, sp.battery_heat_exit, sp.chiller_setpoint,
+            sp.battery_cool_target, sp.battery_cool_exit, strategy_int
         )
         # Pre-calculate chiller cooling power profiles (Vectorized)
         chiller_pwr_18c_profile = np.interp(

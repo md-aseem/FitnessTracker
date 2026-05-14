@@ -11,6 +11,10 @@ CIRCULATE_MODE = 3
 OFF = 0
 ON = 1
 
+# --- Cooling Strategies ---
+COOLANT_BASED = 0
+BATTERY_BASED = 1
+
 # --- Physics Specs (NamedTuples) ---
 BatterySpecs = namedtuple('BatterySpecs', ['R', 'inv_cap', 'n_cells', 'cell_cap_ah'])
 WallSpecs = namedtuple('WallSpecs', ['R', 'inv_cap'])
@@ -20,7 +24,8 @@ ChillerSpecs = namedtuple('ChillerSpecs', [
 ])
 SetpointSpecs = namedtuple('SetpointSpecs', [
     'batt_coolant_target', 'battery_cool_min', 'battery_heat_min', 
-    'battery_heat_target', 'battery_heat_max', 'battery_heat_exit', 'chiller_setpoint'
+    'battery_heat_target', 'battery_heat_max', 'battery_heat_exit', 'chiller_setpoint',
+    'battery_cool_target', 'battery_cool_exit', 'cooling_strategy'
 ])
 ProfileSpecs = namedtuple('ProfileSpecs', [
     'current', 'ambient', 'heat_gen', 'radiation', 
@@ -75,6 +80,9 @@ spec = [
     ('battery_heat_max', float64),
     ('battery_heat_exit', float64),
     ('chiller_setpoint', float64),
+    ('battery_cool_target', float64),
+    ('battery_cool_exit', float64),
+    ('cooling_strategy', int32),
 
     # Profiles
     ('current_profile', float64[:]),
@@ -152,6 +160,9 @@ class ThermalSolver:
         self.battery_heat_max = setpoints.battery_heat_max
         self.battery_heat_exit = setpoints.battery_heat_exit
         self.chiller_setpoint = setpoints.chiller_setpoint
+        self.battery_cool_target = setpoints.battery_cool_target
+        self.battery_cool_exit = setpoints.battery_cool_exit
+        self.cooling_strategy = setpoints.cooling_strategy
 
         # Unbundle Profiles
         self.current_profile = profiles.current
@@ -247,7 +258,8 @@ class ThermalSolver:
         battery_temp_max = np.max(self.battery_temp[i-1])
         temp_liquid_coolant_leaving_chiller_prev = self.chiller_outlet_temp[i-1]
 
-        if temp_liquid_coolant_leaving_chiller_prev > self.batt_coolant_target:
+        if (self.cooling_strategy == COOLANT_BASED and temp_liquid_coolant_leaving_chiller_prev > self.batt_coolant_target) or \
+           (self.cooling_strategy == BATTERY_BASED and battery_temp_max > self.battery_cool_target):
             if current_chiller_mode != COOL_MODE:
                 if current_chiller_mode == STANDBY_MODE:
                     came_from_standby = True
@@ -278,7 +290,9 @@ class ThermalSolver:
             fans_status = ON if b_turned_on else OFF
 
             temp_liquid_coolant_entering_chiller_prev = self.chiller_inlet_temp[i-1]
-            if temp_liquid_coolant_entering_chiller_prev < (self.batt_coolant_target - 3.0):
+            
+            if (self.cooling_strategy == COOLANT_BASED and temp_liquid_coolant_entering_chiller_prev < (self.batt_coolant_target - 3.0)) or \
+               (self.cooling_strategy == BATTERY_BASED and battery_temp_max < self.battery_cool_exit):
                 if abs(self.battery_temp[i-1, 6] - self.battery_temp[i-1, 0]) > self.temp_stable:
                     current_chiller_mode, circulation_run_timer = CIRCULATE_MODE, 0.0
                 else:

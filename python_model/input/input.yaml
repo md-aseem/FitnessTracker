@@ -29,6 +29,7 @@ custom_power_profile_path: ""
 hvac_present: False
 
 #setpoints
+cooling_strategy: coolant_based # coolant_based, battery_based
 chiller_setpoint: 19 # C
 battery_cool_target: 25 # C
 battery_cool_min: 19.5 # C

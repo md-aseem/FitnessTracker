@@ -37,6 +37,7 @@ class InputConfig(BaseModel):
     soh_init: float = 1.0
 
     # setpoints
+    cooling_strategy: Literal["coolant_based", "battery_based"] = "coolant_based"
     chiller_setpoint: float = 19
     battery_cool_target: float = 25
     battery_cool_min: float = 19.5
@@ -174,6 +175,7 @@ class OperationalSpecs:
 class SetPoints:
 
     chiller_setpoint: float
+    cooling_strategy: str
 
     # cooling setpoints
     battery_cool_target: float

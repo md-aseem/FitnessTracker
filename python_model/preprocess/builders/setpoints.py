@@ -3,6 +3,7 @@ from python_model.preprocess.properties import SetPoints
 def build_setpoints(input_config):
 
     setpoints = SetPoints(chiller_setpoint=input_config.chiller_setpoint,
+                          cooling_strategy=input_config.cooling_strategy,
                           battery_cool_target=input_config.battery_cool_target,
                           battery_cool_min=input_config.battery_cool_min,
                           battery_cool_exit=input_config.battery_cool_exit,
