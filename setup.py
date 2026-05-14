@@ -13,7 +13,7 @@ requirements = [
 
 setuptools.setup(
     name="quantum_thermal_model",
-    version="0.1.0",
+    version="0.1.1",
     author="Wärtsilä North America, Inc.",
     description="Quantum Thermal Model for battery systems",
     long_description_content_type="text/markdown",
