@@ -1,0 +1,33 @@
+Using Chiller: bergstrom_55kw_c/2
+No radiation load because sunrise_time = 7, sunset_time = 7
+Simulation initialized with battery_type: catl_306
+Running simulation...
+Time taken: 0.07194089889526367
+         29028 function calls (28948 primitive calls) in 0.072 seconds
+
+   Ordered by: internal time
+   List reduced from 386 to 20 due to restriction <20>
+
+   ncalls  tottime  percall  cumtime  percall filename:lineno(function)
+        3    0.013    0.004    0.013    0.004 {built-in method _imp.create_dynamic}
+      999    0.013    0.000    0.013    0.000 /Users/mas985/code/quantum-thermal-model/python_model/simulation.py:193(calculate_ambient_heat_load_and_internal_air_temp)
+      999    0.007    0.000    0.008    0.000 /Users/mas985/code/quantum-thermal-model/python_model/simulation.py:272(update_battery_temp)
+        8    0.007    0.001    0.007    0.001 {built-in method _io.open_code}
+        1    0.007    0.007    0.008    0.008 /Users/mas985/code/quantum-thermal-model/python_model/simulation.py:626(calculate_metrics)
+        1    0.004    0.004    0.004    0.004 {built-in method _posixsubprocess.fork_exec}
+     1211    0.002    0.000    0.002    0.000 {method 'reduce' of 'numpy.ufunc' objects}
+      2/1    0.002    0.001    0.046    0.046 /Users/mas985/code/quantum-thermal-model/python_model/simulation.py:164(run)
+      999    0.001    0.000    0.005    0.000 /Users/mas985/code/quantum-thermal-model/python_model/simulation.py:382(update_control_state)
+      999    0.001    0.000    0.005    0.000 /Users/mas985/code/quantum-thermal-model/python_model/simulation.py:515(update_chiller_condition_and_cool)
+      999    0.001    0.000    0.001    0.000 /Users/mas985/code/quantum-thermal-model/venv/lib/python3.13/site-packages/numpy/_core/_methods.py:96(_clip)
+     1211    0.001    0.000    0.003    0.000 /Users/mas985/code/quantum-thermal-model/venv/lib/python3.13/site-packages/numpy/_core/fromnumeric.py:66(_wrapreduction)
+      999    0.001    0.000    0.004    0.000 /Users/mas985/code/quantum-thermal-model/python_model/simulation.py:561(calculate_battery_stream_mass_flow_rate)
+        8    0.001    0.000    0.001    0.000 {built-in method marshal.loads}
+      999    0.001    0.000    0.003    0.000 /Users/mas985/code/quantum-thermal-model/venv/lib/python3.13/site-packages/numpy/_core/fromnumeric.py:2207(clip)
+      999    0.001    0.000    0.002    0.000 {method 'clip' of 'numpy.generic' objects}
+        1    0.001    0.001    0.001    0.001 {built-in method posix.listdir}
+       36    0.000    0.000    0.001    0.000 {built-in method builtins.__build_class__}
+        1    0.000    0.000    0.000    0.000 {built-in method posix.getcwd}
+       46    0.000    0.000    0.000    0.000 {built-in method posix.stat}
+
+

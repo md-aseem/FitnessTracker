@@ -1,0 +1,2 @@
+recursive-include quantum_thermal_model/data *
+recursive-include quantum_thermal_model/input *

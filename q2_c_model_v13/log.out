@@ -4,16 +4,16 @@
   ******* READING INPUTS FROM FILE in.input *******
 
 
- FIXED AMBIENT TEMPERATURE:          40.00 (degress C)
- COMPONENT INITIAL TEMPERATURE:      20.00 (degrees C)
- MAX CHARGE RATE:                    0.23
- MAX DISCHARGE RATE:                 0.25
+ FIXED AMBIENT TEMPERATURE:          45.00 (degress C)
+ COMPONENT INITIAL TEMPERATURE:      30.00 (degrees C)
+ MAX CHARGE RATE:                    0.30
+ MAX DISCHARGE RATE:                 0.30
  BATTERY MODEL:                      catl_306Ahr
- BATTERY LIFE CONDITION:             end_of_life
- CHILLER MODEL:                      bergstrom_55kW_c/2
+ BATTERY LIFE CONDITION:             beginning_of_life
+ CHILLER MODEL:                      envicool_55kW_c/2
  CHILLER NOISE KIT PRESENT:          no
  IS AN HVAC PRESENT:                 no
- INITIAL STATE OF CHARGE:             0.01 PERCENT
+ INITIAL STATE OF CHARGE:             0.50 PERCENT
 
  --- FOUND CYCLE DEFINITION ---
   Cycle Begins at                    8.00 hours
@@ -27,9 +27,9 @@
 
  --- CHARGE-DISCHARGE CYCLE 1 ---
      part 1 starts at:       8.00 hours
-     part 1 ends   at:      12.09 hours
-     part 2 starts at:      13.09 hours
-     part 2 ends   at:      14.09 hours
+     part 1 ends   at:       9.50 hours
+     part 2 starts at:      10.50 hours
+     part 2 ends   at:      11.33 hours
 
  This run is for Quantum 2.0
  There are  52 cells per module, and  80 modules inside the Quantum
@@ -38,7 +38,7 @@
  To use a solar radiation model, call out sunrise and sunset times
  using @SUNRISE_TIME{  } and @SUNSET_TIME{ }
 
- Using the Bergstrom 55kW Chiller
+ Using the Envicool 55kW Chiller
 
  The Noise kit is not present, the input does not change this
  *** CHILLER PERFORMANCE TABLES ***
@@ -47,35 +47,35 @@
      *** AT 18C COLD SIDE TEMP ***
    Ambient Temp     Cooling       Aux Power
    (degrees C)     Power (W)    Consumption (W)
-    -30.00          70000.0        12408.5
-    -10.00          70000.0        12408.5
-      0.00          70000.0        12408.5
-      5.00          69000.0        12408.5
-     15.00          68000.0        12599.4
-     20.00          65000.0        14126.6
-     25.00          65000.0        16035.6
-     30.00          60000.0        17944.6
-     35.00          55000.0        21189.9
-     40.00          50000.0        20712.7
-     45.00          38000.0        16417.4
-     50.10          26000.0        12599.4
+    -30.00          70500.0        15510.6
+    -10.00          70500.0        15510.6
+      0.00          70500.0        15510.6
+      5.00          69000.0        15749.2
+     15.00          68000.0        16703.8
+     20.00          65000.0        17181.0
+     25.00          62500.0        17658.2
+     30.00          58000.0        19090.0
+     35.00          55000.0        20999.0
+     40.00          51000.0        22430.8
+     45.00          46500.0        21476.2
+     50.10          30500.0        16703.8
 
 
      *** AT 23C COLD SIDE TEMP ***
    Ambient Temp     Cooling       Aux Power
    (degrees C)     Power (W)    Consumption (W)
-   -30.00            74000.0        12160.3
-   -10.00            74000.0        12160.3
-     0.00            74000.0        12160.3
-     5.00            73000.0        12160.3
-    15.00            72000.0        12313.1
-    20.00            69000.0        13840.2
-    25.00            66500.0        15653.8
-    30.00            62000.0        17562.8
-    35.00            59000.0        20808.1
-    40.00            52000.0        20302.2
-    45.00            40000.0        16092.9
-    50.10            28000.0        12351.2
+   -30.00            72500.0        15033.4
+   -10.00            72500.0        15033.4
+     0.00            72500.0        15033.4
+     5.00            71000.0        15272.0
+    15.00            70000.0        16226.5
+    20.00            67000.0        16703.8
+    25.00            64500.0        17181.0
+    30.00            60000.0        18612.8
+    35.00            57000.0        20521.8
+    40.00            53000.0        21953.5
+    45.00            48500.0        20999.0
+    50.10            32500.0        16226.5
 
 
  Using the CATL 306 A*hr battery properties
@@ -86,54 +86,63 @@
 
   *** RUNNING *** 
 
-  0.033 hours:  Entering Standby mode
 
-  8.259 hours:  Entering Cooling Mode because BATTERY_INLET_TEMP > B_COOLANT_TARGET      -->  296.150 > 296.150
- 13.014 hours:  Leaving  Cooling Mode because TECLAST < (B_COOLANT_TARGET - TWO)         -->  293.150 < 294.150
+  0.033 hours:  Entering Cooling Mode because BATTERY_INLET_TEMP > B_COOLANT_TARGET      -->  303.142 > 296.150
+  2.197 hours:  Leaving  Cooling Mode because TECLAST < (B_COOLANT_TARGET - TWO)         -->  293.150 < 294.150
                                      
- 13.014 hours:  Entering Standby mode
+  2.197 hours:  Entering Standby mode
 
- 13.356 hours:  Entering Cooling Mode because BATTERY_INLET_TEMP > B_COOLANT_TARGET      -->  296.150 > 296.150
- 14.969 hours:  Leaving  Cooling Mode because TECLAST < (B_COOLANT_TARGET - TWO)         -->  293.150 < 294.150
+  4.191 hours:  Entering Cooling Mode because BATTERY_INLET_TEMP > B_COOLANT_TARGET      -->  296.150 > 296.150
+  5.037 hours:  Leaving  Cooling Mode because TECLAST < (B_COOLANT_TARGET - TWO)         -->  293.150 < 294.150
                                      
- 14.969 hours:  Entering Standby mode
+  5.037 hours:  Entering Standby mode
 
- 17.604 hours:  Entering Cooling Mode because BATTERY_INLET_TEMP > B_COOLANT_TARGET      -->  296.150 > 296.150
- 18.435 hours:  Leaving  Cooling Mode because TECLAST < (B_COOLANT_TARGET - TWO)         -->  293.150 < 294.150
+  8.041 hours:  Entering Cooling Mode because BATTERY_INLET_TEMP > B_COOLANT_TARGET      -->  296.150 > 296.150
+ 11.990 hours:  Leaving  Cooling Mode because TECLAST < (B_COOLANT_TARGET - TWO)         -->  293.150 < 294.150
                                      
- 18.435 hours:  Entering Standby mode
+ 11.990 hours:  Entering Standby mode
 
- 22.874 hours:  Entering Cooling Mode because BATTERY_INLET_TEMP > B_COOLANT_TARGET      -->  296.150 > 296.150
- 23.705 hours:  Leaving  Cooling Mode because TECLAST < (B_COOLANT_TARGET - TWO)         -->  293.150 < 294.150
+ 13.980 hours:  Entering Cooling Mode because BATTERY_INLET_TEMP > B_COOLANT_TARGET      -->  296.150 > 296.150
+ 14.825 hours:  Leaving  Cooling Mode because TECLAST < (B_COOLANT_TARGET - TWO)         -->  293.150 < 294.150
                                      
- 23.705 hours:  Entering Standby mode
+ 14.825 hours:  Entering Standby mode
+
+ 18.212 hours:  Entering Cooling Mode because BATTERY_INLET_TEMP > B_COOLANT_TARGET      -->  296.150 > 296.150
+ 19.058 hours:  Leaving  Cooling Mode because TECLAST < (B_COOLANT_TARGET - TWO)         -->  293.150 < 294.150
+                                     
+ 19.058 hours:  Entering Standby mode
+
+ 22.447 hours:  Entering Cooling Mode because BATTERY_INLET_TEMP > B_COOLANT_TARGET      -->  296.150 > 296.150
+ 23.293 hours:  Leaving  Cooling Mode because TECLAST < (B_COOLANT_TARGET - TWO)         -->  293.150 < 294.150
+                                     
+ 23.293 hours:  Entering Standby mode
 
 
  *** RUN SUMMARY ***
 
- AVERAGE AMBIENT TEMPERATURE:       40.00 degrees C
+ AVERAGE AMBIENT TEMPERATURE:       45.00 degrees C
 
- BATTERY HEAT GENERATED:           131.75 kW*hrs
- HEAT EXCHANGE WITH AMBIENT AIR:    42.33 kW*hrs
+ BATTERY HEAT GENERATED:            68.91 kW*hrs
+ HEAT EXCHANGE WITH AMBIENT AIR:    54.04 kW*hrs
  RADIATION HEAT LOAD:                0.00 kW*hrs
 
- AUX ENERGY USED:                  128.26 kW*hrs
-   OPERATING AUX:                   73.75 kW*hrs
-     RESTING AUX:                   41.90 kW*hrs
-      IDLING AUX:                   12.60 kW*hrs
+ AUX ENERGY USED:                  149.22 kW*hrs
+   OPERATING AUX:                   36.93 kW*hrs
+     RESTING AUX:                   99.86 kW*hrs
+      IDLING AUX:                   12.44 kW*hrs
 
-   CHILLER AUX:                    116.87 kW*hrs   (1.49 Chiller COP)
-   HVAC AUX:                         3.19 kW*hrs
-   DEHUMIDIFIER AUX:                 1.00 kW*hrs
+   CHILLER AUX:                    141.29 kW*hrs   (0.87 Chiller COP)
+   HVAC AUX:                         0.71 kW*hrs
+   DEHUMIDIFIER AUX:                 0.02 kW*hrs
    AUX LOAD  1:                      7.20 kW*hrs
 
- PEAK AUX POWER:                    17.98 kW
- MAX BATTERY TEMP:                  26.69 degrees C
- AVERAGE BATTERY TEMP:              23.05 degrees C
- OPERATING AVERAGE BATTERY TEMP:    25.71 degrees C
- REST/IDLE AVERAGE BATTERY TEMP:    22.34 degrees C
+ PEAK AUX POWER:                    19.91 kW
+ MAX BATTERY TEMP:                  30.08 degrees C
+ AVERAGE BATTERY TEMP:              23.65 degrees C
+ OPERATING AVERAGE BATTERY TEMP:    25.46 degrees C
+ REST/IDLE AVERAGE BATTERY TEMP:    23.46 degrees C
 
  INITIAL SOH:                      100.00
- END-OF-YEAR SOH (directional):     96.74
+ END-OF-YEAR SOH (directional):     96.93
 
 
