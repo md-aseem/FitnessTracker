@@ -8,7 +8,7 @@ from dataclasses import dataclass, field
 class InputConfig(BaseModel):
 
     ## high-level
-    quantum: Literal["2p0", "3p0", "2p1"]
+    quantum: Literal["2p0", "3p0", "2p1"] = "2p0"
 
     ## operational
     n_cycles: int
@@ -17,14 +17,14 @@ class InputConfig(BaseModel):
     max_charge_rate: float
     max_discharge_rate: float
     battery_type: str
-    battery_life: str
-    chiller_model: str
+    battery_life: str = "bol"
+    chiller_model: str = "bergstrom_55kw_c/2"
 
     location: str = None
     month: int = None
 
     # initialization
-    soc_init: float
+    soc_init: float = 0.0
     
     # Custom Profile
     custom_power_profile_path: str = None
@@ -37,16 +37,16 @@ class InputConfig(BaseModel):
     soh_init: float = 1.0
 
     # setpoints
-    chiller_setpoint: float
-    battery_cool_target: float
-    battery_cool_min: float
-    battery_cool_exit: float
-    b_coolant_target: float
+    chiller_setpoint: float = 19
+    battery_cool_target: float = 25
+    battery_cool_min: float = 19.5
+    battery_cool_exit: float = 22
+    b_coolant_target: float = 23
 
-    battery_heat_min: float
-    battery_heat_target: float
-    battery_heat_max: float
-    battery_heat_exit: float
+    battery_heat_min: float = 15
+    battery_heat_target: float = 18
+    battery_heat_max: float = 22
+    battery_heat_exit: float = 17.5
 
 ### module specs
 @dataclass
